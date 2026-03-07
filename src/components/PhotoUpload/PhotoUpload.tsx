@@ -12,6 +12,8 @@ import {
   Menu,
   MenuItem,
   ListItemText,
+  TextField,
+  Divider,
 } from '@mui/material'
 import { CameraAlt, RestaurantMenu, ArrowBack, CloudUpload, Check, Edit, Add } from '@mui/icons-material'
 import { useAppDispatch, useAppSelector } from '../../hooks/redux'
@@ -35,9 +37,15 @@ export default function PhotoUpload({ onIngredientsConfirmed, onBack }: PhotoUpl
   const [tab, setTab] = useState(0)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [selectedNames, setSelectedNames] = useState<Set<string>>(new Set())
+  const [customIngredients, setCustomIngredients] = useState<string[]>([])
+
   const [addProductAnchor, setAddProductAnchor] = useState<null | HTMLElement>(null)
+  const [addSearchQuery, setAddSearchQuery] = useState('')
+
   const [replaceAnchor, setReplaceAnchor] = useState<null | HTMLElement>(null)
   const [replaceName, setReplaceName] = useState<string | null>(null)
+  const [replaceSearchQuery, setReplaceSearchQuery] = useState('')
+
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleFile = useCallback(
@@ -45,8 +53,8 @@ export default function PhotoUpload({ onIngredientsConfirmed, onBack }: PhotoUpl
       if (!file.type.startsWith('image/')) return
       dispatch(clearPhoto())
       setSelectedNames(new Set())
+      setCustomIngredients([])
 
-      // Фото с iPhone часто в HEIC — конвертируем в JPEG для превью и API
       let fileToUse = file
       if (isHeic(file)) {
         try {
@@ -128,11 +136,19 @@ export default function PhotoUpload({ onIngredientsConfirmed, onBack }: PhotoUpl
     })
     setReplaceAnchor(null)
     setReplaceName(null)
+    setReplaceSearchQuery('')
   }
 
   const handleAddProduct = (name: string) => {
-    setSelectedNames((prev) => new Set(prev).add(name))
+    const trimmed = name.trim()
+    if (!trimmed) return
+    setSelectedNames((prev) => new Set(prev).add(trimmed))
+    // If it's a custom (not in DB) ingredient, track it
+    if (!ingredients.some((i) => i.name === trimmed)) {
+      setCustomIngredients((prev) => prev.includes(trimmed) ? prev : [...prev, trimmed])
+    }
     setAddProductAnchor(null)
+    setAddSearchQuery('')
   }
 
   const handleConfirm = () => {
@@ -148,7 +164,32 @@ export default function PhotoUpload({ onIngredientsConfirmed, onBack }: PhotoUpl
     setPreviewUrl(null)
     dispatch(clearPhoto())
     setSelectedNames(new Set())
+    setCustomIngredients([])
   }
+
+  // Filtered list for "Add product" menu
+  const addFilteredIngredients = ingredients.filter((i) => {
+    if (selectedNames.has(i.name)) return false
+    if (!addSearchQuery) return true
+    return i.name.toLowerCase().startsWith(addSearchQuery.toLowerCase())
+  })
+
+  const addQueryIsNew =
+    addSearchQuery.trim().length > 0 &&
+    !ingredients.some((i) => i.name.toLowerCase() === addSearchQuery.toLowerCase().trim()) &&
+    !selectedNames.has(addSearchQuery.trim())
+
+  // Filtered list for "Replace" menu
+  const replaceFilteredIngredients = ingredients.filter((i) => {
+    if (i.name === replaceName) return false
+    if (!replaceSearchQuery) return true
+    return i.name.toLowerCase().startsWith(replaceSearchQuery.toLowerCase())
+  })
+
+  const replaceQueryIsNew =
+    replaceSearchQuery.trim().length > 0 &&
+    !ingredients.some((i) => i.name.toLowerCase() === replaceSearchQuery.toLowerCase().trim()) &&
+    replaceName !== replaceSearchQuery.trim()
 
   return (
     <Box>
@@ -211,7 +252,6 @@ export default function PhotoUpload({ onIngredientsConfirmed, onBack }: PhotoUpl
         )}
       </Paper>
 
-      {/* Индикатор загрузки */}
       {status === 'analyzing' && (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
           <CircularProgress size={24} />
@@ -219,14 +259,12 @@ export default function PhotoUpload({ onIngredientsConfirmed, onBack }: PhotoUpl
         </Box>
       )}
 
-      {/* Ошибка */}
       {status === 'error' && error && (
         <Alert severity="error" sx={{ mb: 2 }}>
           {error}
         </Alert>
       )}
 
-      {/* Вкладка 1: найденные ингредиенты */}
       {tab === 0 && status === 'done' && (
         <Box>
           {detectedIngredientNames.length === 0 ? (
@@ -239,7 +277,7 @@ export default function PhotoUpload({ onIngredientsConfirmed, onBack }: PhotoUpl
                 Найденные продукты — отметьте нужные, замените ошибочные или добавьте свои:
               </Typography>
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-                {detectedIngredientNames.map((name) => (
+                {[...detectedIngredientNames, ...customIngredients.filter(n => !detectedIngredientNames.includes(n))].map((name) => (
                   <Chip
                     key={name}
                     label={name}
@@ -247,6 +285,7 @@ export default function PhotoUpload({ onIngredientsConfirmed, onBack }: PhotoUpl
                     onDelete={(e) => {
                       e.stopPropagation()
                       setReplaceName(name)
+                      setReplaceSearchQuery('')
                       setReplaceAnchor((e.currentTarget as HTMLElement).closest('.MuiChip-root') as HTMLElement)
                     }}
                     deleteIcon={<Edit fontSize="small" />}
@@ -258,45 +297,93 @@ export default function PhotoUpload({ onIngredientsConfirmed, onBack }: PhotoUpl
                 <Button
                   size="small"
                   startIcon={<Add />}
-                  onClick={(e) => setAddProductAnchor(e.currentTarget)}
+                  onClick={(e) => { setAddProductAnchor(e.currentTarget); setAddSearchQuery('') }}
                   sx={{ alignSelf: 'center' }}
                 >
                   Добавить продукт
                 </Button>
               </Box>
+
+              {/* Replace menu with search */}
               <Menu
                 anchorEl={replaceAnchor}
                 open={Boolean(replaceAnchor) && Boolean(replaceName)}
-                onClose={() => { setReplaceAnchor(null); setReplaceName(null) }}
+                onClose={() => { setReplaceAnchor(null); setReplaceName(null); setReplaceSearchQuery('') }}
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                slotProps={{ paper: { sx: { maxHeight: 360, width: 240 } } }}
               >
-                {replaceName &&
-                  ingredients
-                    .filter((i) => i.name !== replaceName)
-                    .map((ing) => (
-                      <MenuItem key={ing.id} onClick={() => handleReplace(replaceName, ing.name)}>
-                        <ListItemText primary={ing.name} />
-                      </MenuItem>
-                    ))}
+                <Box sx={{ px: 1.5, py: 1 }} onKeyDown={(e) => e.stopPropagation()}>
+                  <TextField
+                    autoFocus
+                    size="small"
+                    placeholder="Поиск..."
+                    fullWidth
+                    value={replaceSearchQuery}
+                    onChange={(e) => setReplaceSearchQuery(e.target.value)}
+                  />
+                </Box>
+                <Divider />
+                {replaceQueryIsNew && (
+                  <MenuItem onClick={() => replaceName && handleReplace(replaceName, replaceSearchQuery.trim())}>
+                    <ListItemText
+                      primary={`+ Добавить «${replaceSearchQuery.trim()}»`}
+                      primaryTypographyProps={{ color: 'primary', fontWeight: 600 }}
+                    />
+                  </MenuItem>
+                )}
+                {replaceFilteredIngredients.map((ing) => (
+                  <MenuItem key={ing.id} onClick={() => replaceName && handleReplace(replaceName, ing.name)}>
+                    <ListItemText primary={ing.name} />
+                  </MenuItem>
+                ))}
+                {replaceFilteredIngredients.length === 0 && !replaceQueryIsNew && (
+                  <MenuItem disabled>Ничего не найдено</MenuItem>
+                )}
               </Menu>
+
+              {/* Add product menu with search */}
               <Menu
                 anchorEl={addProductAnchor}
                 open={Boolean(addProductAnchor)}
-                onClose={() => setAddProductAnchor(null)}
+                onClose={() => { setAddProductAnchor(null); setAddSearchQuery('') }}
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-                sx={{ maxHeight: 320 }}
+                slotProps={{ paper: { sx: { maxHeight: 360, width: 240 } } }}
               >
-                {ingredients
-                  .filter((i) => !selectedNames.has(i.name))
-                  .map((ing) => (
-                    <MenuItem key={ing.id} onClick={() => handleAddProduct(ing.name)}>
-                      <ListItemText primary={ing.name} />
-                    </MenuItem>
-                  ))}
-                {ingredients.every((i) => selectedNames.has(i.name)) && (
-                  <MenuItem disabled>Все продукты уже добавлены</MenuItem>
+                <Box sx={{ px: 1.5, py: 1 }} onKeyDown={(e) => e.stopPropagation()}>
+                  <TextField
+                    autoFocus
+                    size="small"
+                    placeholder="Поиск или введите название..."
+                    fullWidth
+                    value={addSearchQuery}
+                    onChange={(e) => setAddSearchQuery(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && addSearchQuery.trim()) {
+                        e.preventDefault()
+                        handleAddProduct(addSearchQuery.trim())
+                      }
+                    }}
+                  />
+                </Box>
+                <Divider />
+                {addQueryIsNew && (
+                  <MenuItem onClick={() => handleAddProduct(addSearchQuery.trim())}>
+                    <ListItemText
+                      primary={`+ Добавить «${addSearchQuery.trim()}»`}
+                      primaryTypographyProps={{ color: 'primary', fontWeight: 600 }}
+                    />
+                  </MenuItem>
+                )}
+                {addFilteredIngredients.map((ing) => (
+                  <MenuItem key={ing.id} onClick={() => handleAddProduct(ing.name)}>
+                    <ListItemText primary={ing.name} />
+                  </MenuItem>
+                ))}
+                {addFilteredIngredients.length === 0 && !addQueryIsNew && (
+                  <MenuItem disabled>Ничего не найдено</MenuItem>
                 )}
               </Menu>
+
               <Button
                 variant="contained"
                 size="large"
@@ -311,7 +398,6 @@ export default function PhotoUpload({ onIngredientsConfirmed, onBack }: PhotoUpl
         </Box>
       )}
 
-      {/* Вкладка 2: калории */}
       {tab === 1 && status === 'done' && calorieEstimate && (
         <Box sx={{ maxWidth: 400 }}>
           <CalorieCard estimate={calorieEstimate} />
