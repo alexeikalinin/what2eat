@@ -292,6 +292,76 @@ export async function findDishesByIngredients(
 }
 
 /**
+ * Получает все блюда из базы данных
+ */
+export async function getAllDishes(): Promise<Dish[]> {
+  const db = getDatabase()
+
+  try {
+    const dishesStmt = db.prepare(`
+      SELECT DISTINCT d.id, d.name, d.description, d.image_url, d.cooking_time, d.difficulty, d.servings, d.estimated_cost, d.is_vegetarian, d.is_vegan
+      FROM dishes d
+      ORDER BY d.name
+    `)
+
+    const dishes: Dish[] = []
+    const dishIds: number[] = []
+    while (dishesStmt.step()) {
+      const row = dishesStmt.getAsObject()
+      const dishId = row.id as number
+      dishIds.push(dishId)
+      dishes.push({
+        id: dishId,
+        name: row.name as string,
+        description: (row.description as string) || null,
+        image_url: (row.image_url as string) || null,
+        cooking_time: row.cooking_time as number,
+        difficulty: row.difficulty as Dish['difficulty'],
+        servings: row.servings as number,
+        estimated_cost: (row.estimated_cost as number) ?? null,
+        is_vegetarian: Boolean(row.is_vegetarian),
+        is_vegan: Boolean(row.is_vegan),
+      })
+    }
+    dishesStmt.free()
+
+    if (dishIds.length === 0) return dishes
+
+    const idsPlaceholders = dishIds.map(() => '?').join(',')
+    const ingStmt = db.prepare(`SELECT dish_id, ingredient_id FROM dish_ingredients WHERE dish_id IN (${idsPlaceholders})`)
+    ingStmt.bind(dishIds)
+    const ingMap = new Map<number, number[]>()
+    while (ingStmt.step()) {
+      const r = ingStmt.getAsObject()
+      const dId = r.dish_id as number
+      if (!ingMap.has(dId)) ingMap.set(dId, [])
+      ingMap.get(dId)!.push(r.ingredient_id as number)
+    }
+    ingStmt.free()
+
+    const allIngIds = [...new Set([...ingMap.values()].flat())]
+    const ingDetailsMap = new Map<number, Ingredient>()
+    if (allIngIds.length > 0) {
+      const detailsStmt = db.prepare(`SELECT id, name, category, image_url FROM ingredients WHERE id IN (${allIngIds.map(() => '?').join(',')})`)
+      detailsStmt.bind(allIngIds)
+      while (detailsStmt.step()) {
+        const r = detailsStmt.getAsObject()
+        ingDetailsMap.set(r.id as number, { id: r.id as number, name: r.name as string, category: r.category as Ingredient['category'], image_url: (r.image_url as string) || null })
+      }
+      detailsStmt.free()
+    }
+
+    return dishes.map(dish => ({
+      ...dish,
+      ingredients: (ingMap.get(dish.id) || []).map(id => ingDetailsMap.get(id)).filter(Boolean) as Ingredient[],
+    }))
+  } catch (error) {
+    console.error('Error getting all dishes:', error)
+    return []
+  }
+}
+
+/**
  * Получает все блюда, которые содержат мясные ингредиенты (мясо, сосиски, фарш)
  * @returns Массив блюд с мясными ингредиентами
  */
@@ -426,18 +496,7 @@ export function randomizeDishes(dishes: Dish[]): Dish[] {
   const shuffled = [...dishes].sort(() => Math.random() - 0.5)
   
   // Выбираем случайное количество от 3 до 5, но не больше доступных блюд
-  const minCount = 3
-  const maxCount = 5
-  
-  // Если блюд меньше минимума, возвращаем все доступные
-  if (shuffled.length < minCount) {
-    return shuffled
-  }
-  
-  // Выбираем случайное количество от 3 до min(5, количество доступных блюд)
-  const availableMax = Math.min(shuffled.length, maxCount)
-  const count = Math.floor(Math.random() * (availableMax - minCount + 1)) + minCount
-  
+  const count = Math.min(20, shuffled.length)
   return shuffled.slice(0, count)
 }
 

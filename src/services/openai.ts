@@ -117,3 +117,38 @@ export async function estimateCaloriesFromImage(
   }
   return { calories: 0, protein: 0, fat: 0, carbs: 0, description: 'Не удалось определить' }
 }
+
+/**
+ * Предлагает 3–5 блюд по списку ингредиентов (когда в базе ничего не нашли).
+ */
+export async function suggestDishesByIngredients(ingredientNames: string[]): Promise<string[]> {
+  if (ingredientNames.length === 0) return []
+  const prompt = `Есть продукты: ${ingredientNames.join(', ')}.
+Предложи 3–5 простых блюд, которые можно приготовить из этих продуктов (можно не все использовать).
+Верни ТОЛЬКО JSON массив строк с названиями блюд на русском, без пояснений.
+Пример: ["Яичница с сыром", "Омлет с овощами"]`
+
+  try {
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${getApiKey()}`,
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        max_tokens: 150,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    })
+    if (!response.ok) return []
+    const data = await response.json()
+    const text: string = data.choices?.[0]?.message?.content ?? '[]'
+    const match = text.match(/\[[\s\S]*?\]/)
+    if (!match) return []
+    const arr = JSON.parse(match[0]) as unknown
+    return Array.isArray(arr) ? arr.filter((x): x is string => typeof x === 'string').slice(0, 5) : []
+  } catch {
+    return []
+  }
+}

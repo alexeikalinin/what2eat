@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useCallback } from 'react'
 import { Box, Button, CircularProgress, Alert } from '@mui/material'
 import { Casino, CameraAlt } from '@mui/icons-material'
 import { useAppDispatch, useAppSelector } from './hooks/redux'
@@ -22,11 +22,13 @@ type View = 'ingredients' | 'photo' | 'dishes' | 'swipe_results' | 'recipe' | 's
 function App() {
   const dispatch = useAppDispatch()
   const [view, setView] = useState<View>('ingredients')
+  const [prevView, setPrevView] = useState<View>('swipe_results')
   const [dbInitialized, setDbInitialized] = useState(false)
   const [dbError, setDbError] = useState<string | null>(null)
   const { selectedIngredients } = useAppSelector((state) => state.ingredients)
   const { dishes } = useAppSelector((state) => state.dishes)
   const filters = useAppSelector((state) => state.filters)
+  const { likedDishIds } = useAppSelector((state) => state.swipe)
 
   useEffect(() => {
     let cancelled = false
@@ -82,14 +84,24 @@ function App() {
     setView('dishes')
   }
 
-  const handleDishSelect = (dishId: number) => {
+  const handleDishSelect = useCallback((dishId: number, from: View = 'swipe_results') => {
     dispatch(fetchRecipe(dishId))
+    setPrevView(from)
     setView('recipe')
-  }
+  }, [dispatch])
 
   const handlePhotoIngredientsConfirmed = (ids: number[]) => {
     dispatch(resetSwipe())
-    dispatchFindDishes(ids)
+    dispatch(
+      findDishes({
+        ingredientIds: ids,
+        options: {
+          allowMissing: 3,
+          vegetarianOnly: filters.vegetarianOnly,
+          veganOnly: filters.veganOnly,
+        },
+      })
+    )
     setView('dishes')
   }
 
@@ -108,7 +120,11 @@ function App() {
   }
 
   return (
-    <Layout onPlannerClick={() => setView('weekly_planner')}>
+    <Layout
+      onPlannerClick={() => setView('weekly_planner')}
+      likedCount={likedDishIds.length}
+      onFavoritesClick={() => setView('swipe_results')}
+    >
       {view === 'ingredients' && (
         <Box>
           <IngredientSelector />
@@ -155,7 +171,7 @@ function App() {
       {view === 'dishes' && (
         <SwipeDeck
           dishes={visibleDishes}
-          onDishSelect={handleDishSelect}
+          onDishSelect={(dishId) => handleDishSelect(dishId, 'dishes')}
           onComplete={() => setView('swipe_results')}
           onBack={() => setView('ingredients')}
         />
@@ -163,7 +179,7 @@ function App() {
 
       {view === 'swipe_results' && (
         <SwipeResults
-          onDishSelect={handleDishSelect}
+          onDishSelect={(dishId) => handleDishSelect(dishId, 'swipe_results')}
           onBack={() => setView('dishes')}
           onRepeat={() => setView('dishes')}
           onShoppingList={() => setView('shopping_list')}
@@ -171,7 +187,7 @@ function App() {
       )}
 
       {view === 'recipe' && (
-        <RecipeView onBack={() => setView('swipe_results')} />
+        <RecipeView onBack={() => setView(prevView)} />
       )}
 
       {view === 'shopping_list' && (

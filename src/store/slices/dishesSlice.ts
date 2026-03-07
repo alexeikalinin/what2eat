@@ -2,15 +2,18 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import { Dish } from '../../types'
 import * as dishesService from '../../services/dishes'
 import { FindDishesOptions } from '../../services/dishes'
+import { suggestDishesByIngredients } from '../../services/openai'
 
 interface DishesState {
   dishes: Dish[]
+  suggestedDishNames: string[]
   loading: boolean
   error: string | null
 }
 
 const initialState: DishesState = {
   dishes: [],
+  suggestedDishNames: [],
   loading: false,
   error: null,
 }
@@ -25,8 +28,15 @@ export const findDishes = createAsyncThunk(
 export const randomizeMeatDishes = createAsyncThunk(
   'dishes/randomizeMeat',
   async () => {
-    const allMeatDishes = await dishesService.getDishesWithMeat()
-    return dishesService.randomizeDishes(allMeatDishes)
+    const allDishes = await dishesService.getAllDishes()
+    return dishesService.randomizeDishes(allDishes)
+  }
+)
+
+export const fetchSuggestedDishes = createAsyncThunk(
+  'dishes/suggestByAi',
+  async (ingredientNames: string[]) => {
+    return await suggestDishesByIngredients(ingredientNames)
   }
 )
 
@@ -36,6 +46,7 @@ const dishesSlice = createSlice({
   reducers: {
     clearDishes: (state) => {
       state.dishes = []
+      state.suggestedDishNames = []
     },
   },
   extraReducers: (builder) => {
@@ -43,6 +54,7 @@ const dishesSlice = createSlice({
       .addCase(findDishes.pending, (state) => {
         state.loading = true
         state.error = null
+        state.suggestedDishNames = []
       })
       .addCase(findDishes.fulfilled, (state, action) => {
         state.loading = false
@@ -63,6 +75,12 @@ const dishesSlice = createSlice({
       .addCase(randomizeMeatDishes.rejected, (state, action) => {
         state.loading = false
         state.error = action.error.message || 'Failed to randomize dishes'
+      })
+      .addCase(fetchSuggestedDishes.fulfilled, (state, action) => {
+        state.suggestedDishNames = action.payload
+      })
+      .addCase(fetchSuggestedDishes.rejected, (state) => {
+        state.suggestedDishNames = []
       })
   },
 })

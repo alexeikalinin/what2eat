@@ -30,7 +30,7 @@ test.describe('What2Eat — основные сценарии', () => {
 
     await page.getByRole('button', { name: 'Найти блюда' }).click()
 
-    await expect(page.getByText(/блюд осталось|Все просмотрены|Блюда не найдены/)).toBeVisible({ timeout: 10000 })
+    await expect(page.getByText(/блюд осталось|Все просмотрены|В базе нет подходящих блюд/)).toBeVisible({ timeout: 10000 })
   })
 
   // ─── 2. Свайп влево и вправо через кнопки ────────────────────────────────────
@@ -42,7 +42,7 @@ test.describe('What2Eat — основные сценарии', () => {
     await page.getByRole('button', { name: 'Найти блюда' }).click()
 
     // Ждём любого результата свайп-дека
-    await expect(page.getByText(/блюд осталось|Все просмотрены|Блюда не найдены/)).toBeVisible({ timeout: 10000 })
+    await expect(page.getByText(/блюд осталось|Все просмотрены|В базе нет подходящих блюд/)).toBeVisible({ timeout: 10000 })
 
     // Если блюда найдены — проверяем кнопки
     const hasCards = await page.getByText(/блюд осталось/).isVisible().catch(() => false)
@@ -61,7 +61,7 @@ test.describe('What2Eat — основные сценарии', () => {
   test('рандомайзер открывает свайп с блюдами', async ({ page }) => {
     await page.getByRole('button', { name: 'Рандомайзер' }).click()
 
-    await expect(page.getByText(/блюд осталось|Все просмотрены|Блюда не найдены/)).toBeVisible({ timeout: 10000 })
+    await expect(page.getByText(/блюд осталось|Все просмотрены|В базе нет подходящих блюд/)).toBeVisible({ timeout: 10000 })
   })
 
   // ─── 4. Фильтр "только веганское" ────────────────────────────────────────────
@@ -72,7 +72,7 @@ test.describe('What2Eat — основные сценарии', () => {
     await clickIngredient(page, 'Курица')
     await page.getByRole('button', { name: 'Найти блюда' }).click()
 
-    await expect(page.getByText(/блюд осталось|Все просмотрены|Блюда не найдены/)).toBeVisible({ timeout: 10000 })
+    await expect(page.getByText(/блюд осталось|Все просмотрены|В базе нет подходящих блюд/)).toBeVisible({ timeout: 10000 })
   })
 
   // ─── 5. Фильтр "Немного докупить" ────────────────────────────────────────────
@@ -82,45 +82,25 @@ test.describe('What2Eat — основные сценарии', () => {
     await clickIngredient(page, 'Курица')
     await page.getByRole('button', { name: 'Найти блюда' }).click()
 
-    await expect(page.getByText(/блюд осталось|Все просмотрены|Блюда не найдены/)).toBeVisible({ timeout: 10000 })
+    await expect(page.getByText(/блюд осталось|Все просмотрены|В базе нет подходящих блюд/)).toBeVisible({ timeout: 10000 })
   })
 
   // ─── 6. Свайп до конца → результаты → список покупок ─────────────────────────
   test('свайп до конца → результаты → список покупок', async ({ page }) => {
-    // Используем ингредиенты для гарантированного результата
     await clickIngredient(page, 'Курица')
     await clickIngredient(page, 'Макароны')
     await clickIngredient(page, 'Рис')
     await page.getByRole('button', { name: 'Найти блюда' }).click()
-    // Ждём именно карточек с блюдами
     await expect(page.getByText(/\d+ блюд осталось/)).toBeVisible({ timeout: 10000 })
 
-    // Свайпаем карточки перетаскиванием вправо
-    for (let i = 0; i < 15; i++) {
-      // Проверяем, закончились ли карточки
+    // Кликаем кнопку "❤️" (лайк) в цикле — надёжнее drag-симуляции для TinderCard
+    const likeBtn = page.locator('button').filter({ has: page.locator('[data-testid="FavoriteIcon"]') })
+    for (let i = 0; i < 20; i++) {
       const done = await page.getByText(/Все просмотрены|Посмотреть результаты/).isVisible().catch(() => false)
       if (done) break
-
-      // Верхняя карточка — последний элемент с data-testid="swipe-card"
-      const cards = page.locator('[data-testid="swipe-card"]')
-      const topCard = cards.last()
-      if (!await topCard.isVisible({ timeout: 2000 }).catch(() => false)) break
-
-      const box = await topCard.boundingBox()
-      if (!box) break
-
-      // Запоминаем текущий счётчик перед свайпом
+      if (!await likeBtn.isVisible({ timeout: 1000 }).catch(() => false)) break
       const counterBefore = await page.getByText(/\d+ блюд осталось/).textContent().catch(() => null)
-
-      // Drag вправо через центр карточки (используем TinderCard's AnimatedDiv внутри)
-      const cx = box.x + box.width / 2
-      const cy = box.y + box.height / 2
-      await page.mouse.move(cx, cy)
-      await page.mouse.down()
-      await page.mouse.move(cx + 400, cy, { steps: 30 })
-      await page.mouse.up()
-
-      // Ждём изменения счётчика (карточка ушла) или появления "Посмотреть результаты"
+      await likeBtn.click()
       if (counterBefore) {
         await page.waitForFunction(
           (prev) => {
@@ -130,12 +110,9 @@ test.describe('What2Eat — основные сценарии', () => {
           counterBefore,
           { timeout: 3000 }
         ).catch(() => {})
-      } else {
-        await page.waitForTimeout(1000)
       }
     }
 
-    // Нажимаем "Посмотреть результаты" если появилась
     const resultsBtn = page.getByRole('button', { name: 'Посмотреть результаты' })
     if (await resultsBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
       await resultsBtn.click()
@@ -163,7 +140,7 @@ test.describe('What2Eat — основные сценарии', () => {
     await page.getByRole('button', { name: 'Найти блюда' }).click()
 
     // Ждём загрузки свайп-дека (любой исход)
-    await expect(page.getByText(/блюд осталось|Все просмотрены|Блюда не найдены/)).toBeVisible({ timeout: 10000 })
+    await expect(page.getByText(/блюд осталось|Все просмотрены|В базе нет подходящих блюд/)).toBeVisible({ timeout: 10000 })
 
     // Кнопка возврата называется "Назад" если блюда найдены, или "Изменить ингредиенты" если нет
     await page.getByRole('button', { name: /Назад|Изменить ингредиенты/ }).first().click()
@@ -179,6 +156,6 @@ test.describe('What2Eat — основные сценарии', () => {
 
     await clickIngredient(page, 'Курица')
     await page.getByRole('button', { name: 'Найти блюда' }).click()
-    await expect(page.getByText(/блюд осталось|Все просмотрены|Блюда не найдены/)).toBeVisible({ timeout: 10000 })
+    await expect(page.getByText(/блюд осталось|Все просмотрены|В базе нет подходящих блюд/)).toBeVisible({ timeout: 10000 })
   })
 })

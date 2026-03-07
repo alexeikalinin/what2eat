@@ -42,46 +42,46 @@ INSERT OR IGNORE INTO ingredients (name, category, image_url) VALUES
 
 -- Блюда
 INSERT OR IGNORE INTO dishes (name, description, image_url, cooking_time, difficulty, servings, estimated_cost, is_vegetarian, is_vegan) VALUES
-('Макароны с курицей', 'Сытное и простое блюдо из макарон и курицы', '/images/dishes/pasta-chicken.jpg', 30, 'easy', 4, 8.00, 0, 0),
-('Гречка с курицей', 'Классическое блюдо русской кухни', '/images/dishes/buckwheat-chicken.jpg', 40, 'easy', 4, 8.00, 0, 0),
-('Рис с курицей', 'Вкусное блюдо из риса и курицы', '/images/dishes/rice-chicken.jpg', 35, 'easy', 4, 8.00, 0, 0),
-('Макароны по-флотски', 'Макароны с говяжьим фаршем', '/images/dishes/pasta-beef.jpg', 25, 'easy', 4, 9.00, 0, 0),
-('Гречневая каша с мясом', 'Сытная гречка с говядиной', '/images/dishes/buckwheat-beef.jpg', 50, 'medium', 4, 10.00, 0, 0),
-('Картофель с курицей', 'Запеченный картофель с курицей', '/images/dishes/potato-chicken.jpg', 45, 'easy', 4, 9.00, 0, 0),
-('Макароны с говядиной', 'Макароны с тушеной говядиной', '/images/dishes/pasta-beef-stew.jpg', 45, 'medium', 4, 11.00, 0, 0),
-('Макароны со свининой', 'Макароны с обжаренной свининой', '/images/dishes/pasta-pork.jpg', 35, 'easy', 4, 10.00, 0, 0),
-('Рис с говядиной', 'Рис с тушеной говядиной', '/images/dishes/rice-beef.jpg', 50, 'medium', 4, 11.00, 0, 0),
-('Рис со свининой', 'Рис с обжаренной свининой', '/images/dishes/rice-pork.jpg', 40, 'easy', 4, 10.00, 0, 0),
-('Гречка со свининой', 'Гречка с обжаренной свининой', '/images/dishes/buckwheat-pork.jpg', 45, 'easy', 4, 10.00, 0, 0),
-('Овсянка с курицей', 'Овсяная каша с курицей', '/images/dishes/oatmeal-chicken.jpg', 30, 'easy', 4, 7.00, 0, 0),
-('Овсянка с говядиной', 'Овсяная каша с говядиной', '/images/dishes/oatmeal-beef.jpg', 40, 'medium', 4, 9.00, 0, 0),
-('Овсянка со свининой', 'Овсяная каша со свининой', '/images/dishes/oatmeal-pork.jpg', 35, 'easy', 4, 8.00, 0, 0),
-('Картофель с говядиной', 'Запеченный картофель с говядиной', '/images/dishes/potato-beef.jpg', 55, 'medium', 4, 12.00, 0, 0),
-('Картофель со свининой', 'Запеченный картофель со свининой', '/images/dishes/potato-pork.jpg', 50, 'easy', 4, 10.00, 0, 0),
-('Макароны с яичницей', 'Макароны с жареными яйцами', '/images/dishes/pasta-scrambled-eggs.jpg', 20, 'easy', 4, 4.00, 1, 0),
-('Гречка с яичницей', 'Гречка с жареными яйцами', '/images/dishes/buckwheat-scrambled-eggs.jpg', 25, 'easy', 4, 4.00, 1, 0),
-('Рис с яичницей', 'Рис с жареными яйцами', '/images/dishes/rice-scrambled-eggs.jpg', 25, 'easy', 4, 4.00, 1, 0),
-('Картофель с яичницей', 'Картофель с жареными яйцами', '/images/dishes/potato-scrambled-eggs.jpg', 30, 'easy', 4, 4.00, 1, 0),
-('Макароны с вареными яйцами', 'Макароны с вареными яйцами', '/images/dishes/pasta-boiled-eggs.jpg', 20, 'easy', 4, 3.00, 1, 0),
-('Гречка с вареными яйцами', 'Гречка с вареными яйцами', '/images/dishes/buckwheat-boiled-eggs.jpg', 30, 'easy', 4, 3.00, 1, 0),
-('Рис с вареными яйцами', 'Рис с вареными яйцами', '/images/dishes/rice-boiled-eggs.jpg', 30, 'easy', 4, 3.00, 1, 0),
-('Картофель с вареными яйцами', 'Картофель с вареными яйцами', '/images/dishes/potato-boiled-eggs.jpg', 35, 'easy', 4, 4.00, 1, 0),
-('Макароны с овощами', 'Макароны с помидорами, луком и морковью', '/images/dishes/pasta-vegetables.jpg', 25, 'easy', 4, 5.00, 1, 1),
-('Гречка с овощами', 'Гречка с морковью, луком и помидорами', '/images/dishes/buckwheat-vegetables.jpg', 30, 'easy', 4, 4.00, 1, 1),
-('Рис с овощами', 'Рис с морковью, луком и помидорами', '/images/dishes/rice-vegetables.jpg', 30, 'easy', 4, 4.00, 1, 1),
-('Картофель с овощами', 'Запеченный картофель с овощами', '/images/dishes/potato-vegetables.jpg', 40, 'easy', 4, 4.00, 1, 1),
-('Макароны с сыром', 'Макароны с тертым сыром', '/images/dishes/pasta-cheese.jpg', 20, 'easy', 4, 5.00, 1, 0),
-('Гречка с грибами и луком', 'Гречка с обжаренными грибами и луком', '/images/dishes/buckwheat-mushrooms.jpg', 35, 'easy', 4, 4.00, 1, 1),
-('Рис с курицей и овощами', 'Рис с курицей, морковью и луком', '/images/dishes/rice-chicken-vegetables.jpg', 40, 'easy', 4, 9.00, 0, 0),
-('Картофель с курицей и овощами', 'Запеченный картофель с курицей и овощами', '/images/dishes/potato-chicken-vegetables.jpg', 50, 'medium', 4, 10.00, 0, 0),
-('Овсяная каша с молоком', 'Классическая овсяная каша на молоке', '/images/dishes/oatmeal-milk.jpg', 15, 'easy', 2, 2.00, 1, 0),
-('Котлеты из фарша', 'Классические котлеты из мясного фарша', '/images/dishes/meatballs.jpg', 30, 'easy', 4, 9.00, 0, 0),
-('Макароны с сосисками', 'Простое и сытное блюдо из макарон и сосисок', '/images/dishes/pasta-sausages.jpg', 20, 'easy', 4, 6.00, 0, 0),
-('Сосиски с картофелем', 'Жареные сосиски с картофелем', '/images/dishes/potato-sausages.jpg', 30, 'easy', 4, 7.00, 0, 0),
-('Сосиски с гречкой', 'Гречка с жареными сосисками', '/images/dishes/buckwheat-sausages.jpg', 30, 'easy', 4, 7.00, 0, 0),
-('Сосиски с рисом', 'Рис с жареными сосисками', '/images/dishes/rice-sausages.jpg', 30, 'easy', 4, 7.00, 0, 0),
-('Фарш с макаронами', 'Макароны с мясным фаршем и луком', '/images/dishes/pasta-minced-meat.jpg', 25, 'easy', 4, 8.00, 0, 0),
-('Фарш с картофелем', 'Жареный фарш с картофелем', '/images/dishes/potato-minced-meat.jpg', 35, 'easy', 4, 8.00, 0, 0);
+('Макароны с курицей', 'Сытное и простое блюдо из макарон и курицы', 'https://images.unsplash.com/photo-1563379906659-ee70c0c47ba6?w=400&h=520&fit=crop&q=80', 30, 'easy', 4, 8.00, 0, 0),
+('Гречка с курицей', 'Классическое блюдо русской кухни', 'https://images.unsplash.com/photo-1609950547341-b88d1b98e30f?w=400&h=520&fit=crop&q=80', 40, 'easy', 4, 8.00, 0, 0),
+('Рис с курицей', 'Вкусное блюдо из риса и курицы', 'https://images.unsplash.com/photo-1512058454905-6b841e7ad132?w=400&h=520&fit=crop&q=80', 35, 'easy', 4, 8.00, 0, 0),
+('Макароны по-флотски', 'Макароны с говяжьим фаршем', 'https://images.unsplash.com/photo-1555396273-122e7a6ce434?w=400&h=520&fit=crop&q=80', 25, 'easy', 4, 9.00, 0, 0),
+('Гречневая каша с мясом', 'Сытная гречка с говядиной', 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=400&h=520&fit=crop&q=80', 50, 'medium', 4, 10.00, 0, 0),
+('Картофель с курицей', 'Запеченный картофель с курицей', 'https://images.unsplash.com/photo-1598514983-99b501817cc5?w=400&h=520&fit=crop&q=80', 45, 'easy', 4, 9.00, 0, 0),
+('Макароны с говядиной', 'Макароны с тушеной говядиной', 'https://images.unsplash.com/photo-1551218372-a8789b81b253?w=400&h=520&fit=crop&q=80', 45, 'medium', 4, 11.00, 0, 0),
+('Макароны со свининой', 'Макароны с обжаренной свининой', 'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=400&h=520&fit=crop&q=80', 35, 'easy', 4, 10.00, 0, 0),
+('Рис с говядиной', 'Рис с тушеной говядиной', 'https://images.unsplash.com/photo-1544025162-d76538415e0f?w=400&h=520&fit=crop&q=80', 50, 'medium', 4, 11.00, 0, 0),
+('Рис со свининой', 'Рис с обжаренной свининой', 'https://images.unsplash.com/photo-1547592166-6d74a4ccbe73?w=400&h=520&fit=crop&q=80', 40, 'easy', 4, 10.00, 0, 0),
+('Гречка со свининой', 'Гречка с обжаренной свининой', 'https://images.unsplash.com/photo-1609950547341-b88d1b98e30f?w=400&h=520&fit=crop&q=80', 45, 'easy', 4, 10.00, 0, 0),
+('Овсянка с курицей', 'Овсяная каша с курицей', 'https://images.unsplash.com/photo-1517673400267-0251440c45dc?w=400&h=520&fit=crop&q=80', 30, 'easy', 4, 7.00, 0, 0),
+('Овсянка с говядиной', 'Овсяная каша с говядиной', 'https://images.unsplash.com/photo-1517673400267-0251440c45dc?w=400&h=520&fit=crop&q=80', 40, 'medium', 4, 9.00, 0, 0),
+('Овсянка со свининой', 'Овсяная каша со свининой', 'https://images.unsplash.com/photo-1517673400267-0251440c45dc?w=400&h=520&fit=crop&q=80', 35, 'easy', 4, 8.00, 0, 0),
+('Картофель с говядиной', 'Запеченный картофель с говядиной', 'https://images.unsplash.com/photo-1568600891046-c31b656a8a40?w=400&h=520&fit=crop&q=80', 55, 'medium', 4, 12.00, 0, 0),
+('Картофель со свининой', 'Запеченный картофель со свининой', 'https://images.unsplash.com/photo-1568600891046-c31b656a8a40?w=400&h=520&fit=crop&q=80', 50, 'easy', 4, 10.00, 0, 0),
+('Макароны с яичницей', 'Макароны с жареными яйцами', 'https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400&h=520&fit=crop&q=80', 20, 'easy', 4, 4.00, 1, 0),
+('Гречка с яичницей', 'Гречка с жареными яйцами', 'https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400&h=520&fit=crop&q=80', 25, 'easy', 4, 4.00, 1, 0),
+('Рис с яичницей', 'Рис с жареными яйцами', 'https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400&h=520&fit=crop&q=80', 25, 'easy', 4, 4.00, 1, 0),
+('Картофель с яичницей', 'Картофель с жареными яйцами', 'https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400&h=520&fit=crop&q=80', 30, 'easy', 4, 4.00, 1, 0),
+('Макароны с вареными яйцами', 'Макароны с вареными яйцами', 'https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400&h=520&fit=crop&q=80', 20, 'easy', 4, 3.00, 1, 0),
+('Гречка с вареными яйцами', 'Гречка с вареными яйцами', 'https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400&h=520&fit=crop&q=80', 30, 'easy', 4, 3.00, 1, 0),
+('Рис с вареными яйцами', 'Рис с вареными яйцами', 'https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400&h=520&fit=crop&q=80', 30, 'easy', 4, 3.00, 1, 0),
+('Картофель с вареными яйцами', 'Картофель с вареными яйцами', 'https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400&h=520&fit=crop&q=80', 35, 'easy', 4, 4.00, 1, 0),
+('Макароны с овощами', 'Макароны с помидорами, луком и морковью', 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&h=520&fit=crop&q=80', 25, 'easy', 4, 5.00, 1, 1),
+('Гречка с овощами', 'Гречка с морковью, луком и помидорами', 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&h=520&fit=crop&q=80', 30, 'easy', 4, 4.00, 1, 1),
+('Рис с овощами', 'Рис с морковью, луком и помидорами', 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&h=520&fit=crop&q=80', 30, 'easy', 4, 4.00, 1, 1),
+('Картофель с овощами', 'Запеченный картофель с овощами', 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&h=520&fit=crop&q=80', 40, 'easy', 4, 4.00, 1, 1),
+('Макароны с сыром', 'Макароны с тертым сыром', 'https://images.unsplash.com/photo-1618164435735-2cfee3e07c36?w=400&h=520&fit=crop&q=80', 20, 'easy', 4, 5.00, 1, 0),
+('Гречка с грибами и луком', 'Гречка с обжаренными грибами и луком', 'https://images.unsplash.com/photo-1506807803488-8eafc15316c9?w=400&h=520&fit=crop&q=80', 35, 'easy', 4, 4.00, 1, 1),
+('Рис с курицей и овощами', 'Рис с курицей, морковью и луком', 'https://images.unsplash.com/photo-1512058454905-6b841e7ad132?w=400&h=520&fit=crop&q=80', 40, 'easy', 4, 9.00, 0, 0),
+('Картофель с курицей и овощами', 'Запеченный картофель с курицей и овощами', 'https://images.unsplash.com/photo-1598514983-99b501817cc5?w=400&h=520&fit=crop&q=80', 50, 'medium', 4, 10.00, 0, 0),
+('Овсяная каша с молоком', 'Классическая овсяная каша на молоке', 'https://images.unsplash.com/photo-1517673400267-0251440c45dc?w=400&h=520&fit=crop&q=80', 15, 'easy', 2, 2.00, 1, 0),
+('Котлеты из фарша', 'Классические котлеты из мясного фарша', 'https://images.unsplash.com/photo-1529042410759-befb1204b468?w=400&h=520&fit=crop&q=80', 30, 'easy', 4, 9.00, 0, 0),
+('Макароны с сосисками', 'Простое и сытное блюдо из макарон и сосисок', 'https://images.unsplash.com/photo-1565299507177-b0ac66763828?w=400&h=520&fit=crop&q=80', 20, 'easy', 4, 6.00, 0, 0),
+('Сосиски с картофелем', 'Жареные сосиски с картофелем', 'https://images.unsplash.com/photo-1565299507177-b0ac66763828?w=400&h=520&fit=crop&q=80', 30, 'easy', 4, 7.00, 0, 0),
+('Сосиски с гречкой', 'Гречка с жареными сосисками', 'https://images.unsplash.com/photo-1565299507177-b0ac66763828?w=400&h=520&fit=crop&q=80', 30, 'easy', 4, 7.00, 0, 0),
+('Сосиски с рисом', 'Рис с жареными сосисками', 'https://images.unsplash.com/photo-1565299507177-b0ac66763828?w=400&h=520&fit=crop&q=80', 30, 'easy', 4, 7.00, 0, 0),
+('Фарш с макаронами', 'Макароны с мясным фаршем и луком', 'https://images.unsplash.com/photo-1555396273-122e7a6ce434?w=400&h=520&fit=crop&q=80', 25, 'easy', 4, 8.00, 0, 0),
+('Фарш с картофелем', 'Жареный фарш с картофелем', 'https://images.unsplash.com/photo-1568600891046-c31b656a8a40?w=400&h=520&fit=crop&q=80', 35, 'easy', 4, 8.00, 0, 0);
 
 -- Связи блюд и ингредиентов
 -- Макароны с курицей (id=1)
@@ -89,7 +89,7 @@ INSERT OR IGNORE INTO dish_ingredients (dish_id, ingredient_id) VALUES
 (1, 1), -- Курица
 (1, 4), -- Макароны
 (1, 8), -- Лук
-(1, 19); -- Масло растительное
+(1, 34); -- Масло растительное
 
 -- Гречка с курицей (id=2)
 INSERT OR IGNORE INTO dish_ingredients (dish_id, ingredient_id) VALUES
@@ -97,7 +97,7 @@ INSERT OR IGNORE INTO dish_ingredients (dish_id, ingredient_id) VALUES
 (2, 5), -- Гречка
 (2, 8), -- Лук
 (2, 9), -- Морковь
-(2, 19); -- Масло растительное
+(2, 34); -- Масло растительное
 
 -- Рис с курицей (id=3)
 INSERT OR IGNORE INTO dish_ingredients (dish_id, ingredient_id) VALUES
@@ -105,14 +105,14 @@ INSERT OR IGNORE INTO dish_ingredients (dish_id, ingredient_id) VALUES
 (3, 6), -- Рис
 (3, 8), -- Лук
 (3, 9), -- Морковь
-(3, 19); -- Масло растительное
+(3, 34); -- Масло растительное
 
 -- Макароны по-флотски (id=4)
 INSERT OR IGNORE INTO dish_ingredients (dish_id, ingredient_id) VALUES
 (4, 2), -- Говядина
 (4, 4), -- Макароны
 (4, 8), -- Лук
-(4, 19); -- Масло растительное
+(4, 34); -- Масло растительное
 
 -- Гречневая каша с мясом (id=5)
 INSERT OR IGNORE INTO dish_ingredients (dish_id, ingredient_id) VALUES
@@ -120,7 +120,7 @@ INSERT OR IGNORE INTO dish_ingredients (dish_id, ingredient_id) VALUES
 (5, 5), -- Гречка
 (5, 8), -- Лук
 (5, 9), -- Морковь
-(5, 19); -- Масло растительное
+(5, 34); -- Масло растительное
 
 -- Картофель с курицей (id=6)
 INSERT OR IGNORE INTO dish_ingredients (dish_id, ingredient_id) VALUES
@@ -128,7 +128,7 @@ INSERT OR IGNORE INTO dish_ingredients (dish_id, ingredient_id) VALUES
 (6, 11), -- Картофель
 (6, 8), -- Лук
 (6, 13), -- Чеснок
-(6, 19); -- Масло растительное
+(6, 34); -- Масло растительное
 
 -- Макароны с говядиной (id=7)
 INSERT OR IGNORE INTO dish_ingredients (dish_id, ingredient_id) VALUES
@@ -136,14 +136,14 @@ INSERT OR IGNORE INTO dish_ingredients (dish_id, ingredient_id) VALUES
 (7, 4), -- Макароны
 (7, 8), -- Лук
 (7, 9), -- Морковь
-(7, 19); -- Масло растительное
+(7, 34); -- Масло растительное
 
 -- Макароны со свининой (id=8)
 INSERT OR IGNORE INTO dish_ingredients (dish_id, ingredient_id) VALUES
 (8, 3), -- Свинина
 (8, 4), -- Макароны
 (8, 8), -- Лук
-(8, 19); -- Масло растительное
+(8, 34); -- Масло растительное
 
 -- Рис с говядиной (id=9)
 INSERT OR IGNORE INTO dish_ingredients (dish_id, ingredient_id) VALUES
@@ -151,7 +151,7 @@ INSERT OR IGNORE INTO dish_ingredients (dish_id, ingredient_id) VALUES
 (9, 6), -- Рис
 (9, 8), -- Лук
 (9, 9), -- Морковь
-(9, 19); -- Масло растительное
+(9, 34); -- Масло растительное
 
 -- Рис со свининой (id=10)
 INSERT OR IGNORE INTO dish_ingredients (dish_id, ingredient_id) VALUES
@@ -159,7 +159,7 @@ INSERT OR IGNORE INTO dish_ingredients (dish_id, ingredient_id) VALUES
 (10, 6), -- Рис
 (10, 8), -- Лук
 (10, 9), -- Морковь
-(10, 19); -- Масло растительное
+(10, 34); -- Масло растительное
 
 -- Гречка со свининой (id=11)
 INSERT OR IGNORE INTO dish_ingredients (dish_id, ingredient_id) VALUES
@@ -167,14 +167,14 @@ INSERT OR IGNORE INTO dish_ingredients (dish_id, ingredient_id) VALUES
 (11, 5), -- Гречка
 (11, 8), -- Лук
 (11, 9), -- Морковь
-(11, 19); -- Масло растительное
+(11, 34); -- Масло растительное
 
 -- Овсянка с курицей (id=12)
 INSERT OR IGNORE INTO dish_ingredients (dish_id, ingredient_id) VALUES
 (12, 1), -- Курица
 (12, 7), -- Овсянка
 (12, 8), -- Лук
-(12, 19); -- Масло растительное
+(12, 34); -- Масло растительное
 
 -- Овсянка с говядиной (id=13)
 INSERT OR IGNORE INTO dish_ingredients (dish_id, ingredient_id) VALUES
@@ -182,14 +182,14 @@ INSERT OR IGNORE INTO dish_ingredients (dish_id, ingredient_id) VALUES
 (13, 7), -- Овсянка
 (13, 8), -- Лук
 (13, 9), -- Морковь
-(13, 19); -- Масло растительное
+(13, 34); -- Масло растительное
 
 -- Овсянка со свининой (id=14)
 INSERT OR IGNORE INTO dish_ingredients (dish_id, ingredient_id) VALUES
 (14, 3), -- Свинина
 (14, 7), -- Овсянка
 (14, 8), -- Лук
-(14, 19); -- Масло растительное
+(14, 34); -- Масло растительное
 
 -- Картофель с говядиной (id=15)
 INSERT OR IGNORE INTO dish_ingredients (dish_id, ingredient_id) VALUES
@@ -197,7 +197,7 @@ INSERT OR IGNORE INTO dish_ingredients (dish_id, ingredient_id) VALUES
 (15, 11), -- Картофель
 (15, 8), -- Лук
 (15, 13), -- Чеснок
-(15, 19); -- Масло растительное
+(15, 34); -- Масло растительное
 
 -- Картофель со свининой (id=16)
 INSERT OR IGNORE INTO dish_ingredients (dish_id, ingredient_id) VALUES
@@ -205,51 +205,51 @@ INSERT OR IGNORE INTO dish_ingredients (dish_id, ingredient_id) VALUES
 (16, 11), -- Картофель
 (16, 8), -- Лук
 (16, 13), -- Чеснок
-(16, 19); -- Масло растительное
+(16, 34); -- Масло растительное
 
 -- Макароны с яичницей (id=17)
 INSERT OR IGNORE INTO dish_ingredients (dish_id, ingredient_id) VALUES
-(17, 21), -- Яйца
+(17, 31), -- Яйца
 (17, 4), -- Макароны
-(17, 19); -- Масло растительное
+(17, 34); -- Масло растительное
 
 -- Гречка с яичницей (id=18)
 INSERT OR IGNORE INTO dish_ingredients (dish_id, ingredient_id) VALUES
-(18, 21), -- Яйца
+(18, 31), -- Яйца
 (18, 5), -- Гречка
-(18, 19); -- Масло растительное
+(18, 34); -- Масло растительное
 
 -- Рис с яичницей (id=19)
 INSERT OR IGNORE INTO dish_ingredients (dish_id, ingredient_id) VALUES
-(19, 21), -- Яйца
+(19, 31), -- Яйца
 (19, 6), -- Рис
-(19, 19); -- Масло растительное
+(19, 34); -- Масло растительное
 
 -- Картофель с яичницей (id=20)
 INSERT OR IGNORE INTO dish_ingredients (dish_id, ingredient_id) VALUES
-(20, 21), -- Яйца
+(20, 31), -- Яйца
 (20, 11), -- Картофель
 (20, 8), -- Лук
-(20, 19); -- Масло растительное
+(20, 34); -- Масло растительное
 
 -- Макароны с вареными яйцами (id=21)
 INSERT OR IGNORE INTO dish_ingredients (dish_id, ingredient_id) VALUES
-(21, 21), -- Яйца
+(21, 31), -- Яйца
 (21, 4); -- Макароны
 
 -- Гречка с вареными яйцами (id=22)
 INSERT OR IGNORE INTO dish_ingredients (dish_id, ingredient_id) VALUES
-(22, 21), -- Яйца
+(22, 31), -- Яйца
 (22, 5); -- Гречка
 
 -- Рис с вареными яйцами (id=23)
 INSERT OR IGNORE INTO dish_ingredients (dish_id, ingredient_id) VALUES
-(23, 21), -- Яйца
+(23, 31), -- Яйца
 (23, 6); -- Рис
 
 -- Картофель с вареными яйцами (id=24)
 INSERT OR IGNORE INTO dish_ingredients (dish_id, ingredient_id) VALUES
-(24, 21), -- Яйца
+(24, 31), -- Яйца
 (24, 11); -- Картофель
 
 -- Макароны с овощами (id=25)
@@ -258,7 +258,7 @@ INSERT OR IGNORE INTO dish_ingredients (dish_id, ingredient_id) VALUES
 (25, 10), -- Помидоры
 (25, 8), -- Лук
 (25, 9), -- Морковь
-(25, 19); -- Масло растительное
+(25, 34); -- Масло растительное
 
 -- Гречка с овощами (id=26)
 INSERT OR IGNORE INTO dish_ingredients (dish_id, ingredient_id) VALUES
@@ -266,7 +266,7 @@ INSERT OR IGNORE INTO dish_ingredients (dish_id, ingredient_id) VALUES
 (26, 9), -- Морковь
 (26, 8), -- Лук
 (26, 10), -- Помидоры
-(26, 19); -- Масло растительное
+(26, 34); -- Масло растительное
 
 -- Рис с овощами (id=27)
 INSERT OR IGNORE INTO dish_ingredients (dish_id, ingredient_id) VALUES
@@ -274,7 +274,7 @@ INSERT OR IGNORE INTO dish_ingredients (dish_id, ingredient_id) VALUES
 (27, 9), -- Морковь
 (27, 8), -- Лук
 (27, 10), -- Помидоры
-(27, 19); -- Масло растительное
+(27, 34); -- Масло растительное
 
 -- Картофель с овощами (id=28)
 INSERT OR IGNORE INTO dish_ingredients (dish_id, ingredient_id) VALUES
@@ -282,18 +282,18 @@ INSERT OR IGNORE INTO dish_ingredients (dish_id, ingredient_id) VALUES
 (28, 9), -- Морковь
 (28, 8), -- Лук
 (28, 10), -- Помидоры
-(28, 19); -- Масло растительное
+(28, 34); -- Масло растительное
 
 -- Макароны с сыром (id=29)
 INSERT OR IGNORE INTO dish_ingredients (dish_id, ingredient_id) VALUES
 (29, 4), -- Макароны
-(29, 15); -- Сыр
+(29, 29); -- Сыр
 
 -- Гречка с грибами и луком (id=30)
 INSERT OR IGNORE INTO dish_ingredients (dish_id, ingredient_id) VALUES
 (30, 5), -- Гречка
 (30, 8), -- Лук
-(30, 19); -- Масло растительное
+(30, 34); -- Масло растительное
 
 -- Рис с курицей и овощами (id=31)
 INSERT OR IGNORE INTO dish_ingredients (dish_id, ingredient_id) VALUES
@@ -301,7 +301,7 @@ INSERT OR IGNORE INTO dish_ingredients (dish_id, ingredient_id) VALUES
 (31, 1), -- Курица
 (31, 9), -- Морковь
 (31, 8), -- Лук
-(31, 19); -- Масло растительное
+(31, 34); -- Масло растительное
 
 -- Картофель с курицей и овощами (id=32)
 INSERT OR IGNORE INTO dish_ingredients (dish_id, ingredient_id) VALUES
@@ -309,63 +309,63 @@ INSERT OR IGNORE INTO dish_ingredients (dish_id, ingredient_id) VALUES
 (32, 1), -- Курица
 (32, 9), -- Морковь
 (32, 8), -- Лук
-(32, 19); -- Масло растительное
+(32, 34); -- Масло растительное
 
 -- Овсяная каша с молоком (id=33)
 INSERT OR IGNORE INTO dish_ingredients (dish_id, ingredient_id) VALUES
 (33, 7), -- Овсянка
-(33, 32); -- Молоко
+(33, 28); -- Молоко
 
 -- Котлеты из фарша (id=34)
 INSERT OR IGNORE INTO dish_ingredients (dish_id, ingredient_id) VALUES
-(34, 40), -- Фарш
+(34, 36), -- Фарш
 (34, 8), -- Лук
-(34, 21), -- Яйца
-(34, 19); -- Масло растительное
+(34, 31), -- Яйца
+(34, 34); -- Масло растительное
 
 -- Макароны с сосисками (id=35)
 INSERT OR IGNORE INTO dish_ingredients (dish_id, ingredient_id) VALUES
 (35, 4), -- Макароны
-(35, 41), -- Сосиски
+(35, 37), -- Сосиски
 (35, 8), -- Лук
-(35, 19); -- Масло растительное
+(35, 34); -- Масло растительное
 
 -- Сосиски с картофелем (id=36)
 INSERT OR IGNORE INTO dish_ingredients (dish_id, ingredient_id) VALUES
-(36, 41), -- Сосиски
+(36, 37), -- Сосиски
 (36, 11), -- Картофель
 (36, 8), -- Лук
-(36, 19); -- Масло растительное
+(36, 34); -- Масло растительное
 
 -- Сосиски с гречкой (id=37)
 INSERT OR IGNORE INTO dish_ingredients (dish_id, ingredient_id) VALUES
-(37, 41), -- Сосиски
+(37, 37), -- Сосиски
 (37, 5), -- Гречка
 (37, 8), -- Лук
-(37, 19); -- Масло растительное
+(37, 34); -- Масло растительное
 
 -- Сосиски с рисом (id=38)
 INSERT OR IGNORE INTO dish_ingredients (dish_id, ingredient_id) VALUES
-(38, 41), -- Сосиски
+(38, 37), -- Сосиски
 (38, 6), -- Рис
 (38, 8), -- Лук
 (38, 9), -- Морковь
-(38, 19); -- Масло растительное
+(38, 34); -- Масло растительное
 
 -- Фарш с макаронами (id=39)
 INSERT OR IGNORE INTO dish_ingredients (dish_id, ingredient_id) VALUES
-(39, 40), -- Фарш
+(39, 36), -- Фарш
 (39, 4), -- Макароны
 (39, 8), -- Лук
-(39, 19); -- Масло растительное
+(39, 34); -- Масло растительное
 
 -- Фарш с картофелем (id=40)
 INSERT OR IGNORE INTO dish_ingredients (dish_id, ingredient_id) VALUES
-(40, 40), -- Фарш
+(40, 36), -- Фарш
 (40, 11), -- Картофель
 (40, 8), -- Лук
 (40, 9), -- Морковь
-(40, 19); -- Масло растительное
+(40, 34); -- Масло растительное
 
 -- Рецепты
 INSERT OR IGNORE INTO recipes (dish_id, instructions) VALUES

@@ -9,29 +9,20 @@ import {
   CircularProgress,
   Alert,
   Paper,
+  Menu,
+  MenuItem,
+  ListItemText,
 } from '@mui/material'
-import { CameraAlt, RestaurantMenu, ArrowBack, CloudUpload, Check } from '@mui/icons-material'
+import { CameraAlt, RestaurantMenu, ArrowBack, CloudUpload, Check, Edit, Add } from '@mui/icons-material'
 import { useAppDispatch, useAppSelector } from '../../hooks/redux'
-import { analyzeIngredients, analyzeCalories, clearPhoto } from '../../store/slices/photoSlice'
+import { analyzeIngredients, analyzeCalories, clearPhoto, setError } from '../../store/slices/photoSlice'
 import { setSelectedIngredients } from '../../store/slices/ingredientsSlice'
+import { prepareImageForApi, convertHeicToJpegFile, isHeic } from '../../utils/imageUtils'
 import CalorieCard from '../CalorieCard'
 
 interface PhotoUploadProps {
   onIngredientsConfirmed: (ingredientIds: number[]) => void
   onBack: () => void
-}
-
-function fileToBase64(file: File): Promise<{ base64: string; mimeType: string }> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => {
-      const result = reader.result as string
-      const base64 = result.split(',')[1]
-      resolve({ base64, mimeType: file.type })
-    }
-    reader.onerror = reject
-    reader.readAsDataURL(file)
-  })
 }
 
 export default function PhotoUpload({ onIngredientsConfirmed, onBack }: PhotoUploadProps) {
@@ -44,17 +35,56 @@ export default function PhotoUpload({ onIngredientsConfirmed, onBack }: PhotoUpl
   const [tab, setTab] = useState(0)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [selectedNames, setSelectedNames] = useState<Set<string>>(new Set())
+  const [addProductAnchor, setAddProductAnchor] = useState<null | HTMLElement>(null)
+  const [replaceAnchor, setReplaceAnchor] = useState<null | HTMLElement>(null)
+  const [replaceName, setReplaceName] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleFile = useCallback(
     async (file: File) => {
       if (!file.type.startsWith('image/')) return
-      const url = URL.createObjectURL(file)
-      setPreviewUrl(url)
       dispatch(clearPhoto())
       setSelectedNames(new Set())
 
-      const { base64, mimeType } = await fileToBase64(file)
+      // Фото с iPhone часто в HEIC — конвертируем в JPEG для превью и API
+      let fileToUse = file
+      if (isHeic(file)) {
+        try {
+          fileToUse = await convertHeicToJpegFile(file)
+        } catch {
+          dispatch(setError('Не удалось конвертировать фото. Попробуйте другое фото или формат JPEG.'))
+          return
+        }
+      }
+
+      const url = URL.createObjectURL(fileToUse)
+      setPreviewUrl(url)
+
+      let base64: string
+      let mimeType: string
+      try {
+        const prepared = await prepareImageForApi(fileToUse)
+        base64 = prepared.base64
+        mimeType = prepared.mimeType
+      } catch {
+        const supported = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+        if (!supported.includes(file.type)) {
+          dispatch(
+            setError(
+              'Формат не поддерживается. Загрузите JPEG или PNG. iPhone: Настройки → Камера → Форматы → «Наиболее совместимые».'
+            )
+          )
+          return
+        }
+        const reader = new FileReader()
+        const result = await new Promise<string>((res, rej) => {
+          reader.onload = () => res((reader.result as string).split(',')[1] ?? '')
+          reader.onerror = rej
+          reader.readAsDataURL(fileToUse)
+        })
+        base64 = result
+        mimeType = fileToUse.type
+      }
 
       if (tab === 0) {
         const ingredientNames = ingredients.map((i) => i.name)
@@ -87,6 +117,22 @@ export default function PhotoUpload({ onIngredientsConfirmed, onBack }: PhotoUpl
       else next.add(name)
       return next
     })
+  }
+
+  const handleReplace = (oldName: string, newName: string) => {
+    setSelectedNames((prev) => {
+      const next = new Set(prev)
+      next.delete(oldName)
+      next.add(newName)
+      return next
+    })
+    setReplaceAnchor(null)
+    setReplaceName(null)
+  }
+
+  const handleAddProduct = (name: string) => {
+    setSelectedNames((prev) => new Set(prev).add(name))
+    setAddProductAnchor(null)
   }
 
   const handleConfirm = () => {
@@ -190,25 +236,73 @@ export default function PhotoUpload({ onIngredientsConfirmed, onBack }: PhotoUpl
           ) : (
             <>
               <Typography variant="subtitle1" gutterBottom>
-                Найденные продукты — отметьте нужные:
+                Найденные продукты — отметьте нужные, замените ошибочные или добавьте свои:
               </Typography>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 3 }}>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
                 {detectedIngredientNames.map((name) => (
                   <Chip
                     key={name}
                     label={name}
                     onClick={() => toggleName(name)}
+                    onDelete={(e) => {
+                      e.stopPropagation()
+                      setReplaceName(name)
+                      setReplaceAnchor((e.currentTarget as HTMLElement).closest('.MuiChip-root') as HTMLElement)
+                    }}
+                    deleteIcon={<Edit fontSize="small" />}
                     color={selectedNames.has(name) ? 'primary' : 'default'}
                     icon={selectedNames.has(name) ? <Check /> : undefined}
                     clickable
                   />
                 ))}
+                <Button
+                  size="small"
+                  startIcon={<Add />}
+                  onClick={(e) => setAddProductAnchor(e.currentTarget)}
+                  sx={{ alignSelf: 'center' }}
+                >
+                  Добавить продукт
+                </Button>
               </Box>
+              <Menu
+                anchorEl={replaceAnchor}
+                open={Boolean(replaceAnchor) && Boolean(replaceName)}
+                onClose={() => { setReplaceAnchor(null); setReplaceName(null) }}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+              >
+                {replaceName &&
+                  ingredients
+                    .filter((i) => i.name !== replaceName)
+                    .map((ing) => (
+                      <MenuItem key={ing.id} onClick={() => handleReplace(replaceName, ing.name)}>
+                        <ListItemText primary={ing.name} />
+                      </MenuItem>
+                    ))}
+              </Menu>
+              <Menu
+                anchorEl={addProductAnchor}
+                open={Boolean(addProductAnchor)}
+                onClose={() => setAddProductAnchor(null)}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                sx={{ maxHeight: 320 }}
+              >
+                {ingredients
+                  .filter((i) => !selectedNames.has(i.name))
+                  .map((ing) => (
+                    <MenuItem key={ing.id} onClick={() => handleAddProduct(ing.name)}>
+                      <ListItemText primary={ing.name} />
+                    </MenuItem>
+                  ))}
+                {ingredients.every((i) => selectedNames.has(i.name)) && (
+                  <MenuItem disabled>Все продукты уже добавлены</MenuItem>
+                )}
+              </Menu>
               <Button
                 variant="contained"
                 size="large"
                 onClick={handleConfirm}
                 disabled={selectedNames.size === 0}
+                sx={{ mt: 1 }}
               >
                 Найти блюда ({selectedNames.size} продуктов)
               </Button>

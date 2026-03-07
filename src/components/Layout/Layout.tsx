@@ -1,13 +1,15 @@
-import { Box, AppBar, Toolbar, Typography, Container, Button } from '@mui/material'
-import { CalendarMonth } from '@mui/icons-material'
+import { Box, AppBar, Toolbar, Typography, Container, Button, IconButton, Badge } from '@mui/material'
+import { CalendarMonth, RestaurantMenu } from '@mui/icons-material'
 import { ReactNode } from 'react'
 
 interface LayoutProps {
   children: ReactNode
   onPlannerClick?: () => void
+  likedCount?: number
+  onFavoritesClick?: () => void
 }
 
-export default function Layout({ children, onPlannerClick }: LayoutProps) {
+export default function Layout({ children, onPlannerClick, likedCount, onFavoritesClick }: LayoutProps) {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', bgcolor: '#0A0A0A' }}>
       <AppBar position="sticky" sx={{ mb: 3 }}>
@@ -27,6 +29,21 @@ export default function Layout({ children, onPlannerClick }: LayoutProps) {
           >
             ЧтоЕсть
           </Typography>
+          {likedCount != null && likedCount > 0 && onFavoritesClick && (
+            <IconButton
+              onClick={onFavoritesClick}
+              aria-label="Избранные блюда"
+              sx={{
+                color: 'rgba(255,255,255,0.7)',
+                mr: 0.5,
+                '&:hover': { color: '#FF9500', background: 'rgba(255,149,0,0.08)' },
+              }}
+            >
+              <Badge badgeContent={likedCount} color="error" max={99}>
+                <RestaurantMenu />
+              </Badge>
+            </IconButton>
+          )}
           {onPlannerClick && (
             <Button
               onClick={onPlannerClick}

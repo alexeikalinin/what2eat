@@ -11,6 +11,7 @@ interface SwipeCardProps {
 
 export default function SwipeCard({ dish, swipeDirection }: SwipeCardProps) {
   const imageUrl = getDishImageUrl(dish.name, dish.image_url)
+  const fallbackUrl = getDishImageUrl(dish.name, null)
 
   return (
     <Box
@@ -30,6 +31,9 @@ export default function SwipeCard({ dish, swipeDirection }: SwipeCardProps) {
         component="img"
         src={imageUrl}
         alt={dish.name}
+        onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+          e.currentTarget.src = fallbackUrl
+        }}
         sx={{
           width: '100%',
           height: '100%',

@@ -39,6 +39,10 @@ const photoSlice = createSlice({
       state.calorieEstimate = null
       state.error = null
     },
+    setError: (state, action: { payload: string }) => {
+      state.status = 'error'
+      state.error = action.payload
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -70,5 +74,5 @@ const photoSlice = createSlice({
   },
 })
 
-export const { clearPhoto } = photoSlice.actions
+export const { clearPhoto, setError } = photoSlice.actions
 export default photoSlice.reducer

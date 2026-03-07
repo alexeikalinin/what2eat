@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback } from 'react'
+import { useRef, useState, useCallback, useEffect } from 'react'
 import TinderCard from 'react-tinder-card'
 import { motion } from 'framer-motion'
 
@@ -7,10 +7,11 @@ interface CardAPI {
   restoreCard(): Promise<void>
 }
 import { Box, Typography, IconButton, Button } from '@mui/material'
-import { Close, Favorite, ArrowBack, Info } from '@mui/icons-material'
+import { Close, Favorite, ArrowBack, Info, Restaurant } from '@mui/icons-material'
 import { Dish } from '../../types'
 import { useAppDispatch, useAppSelector } from '../../hooks/redux'
 import { swipeDish, markSessionComplete, resetSwipe } from '../../store/slices/swipeSlice'
+import { fetchSuggestedDishes } from '../../store/slices/dishesSlice'
 import SwipeCard from './SwipeCard'
 
 interface SwipeDeckProps {
@@ -23,7 +24,21 @@ interface SwipeDeckProps {
 export default function SwipeDeck({ dishes, onDishSelect, onComplete, onBack }: SwipeDeckProps) {
   const dispatch = useAppDispatch()
   const { currentIndex } = useAppSelector((state) => state.swipe)
+  const { suggestedDishNames } = useAppSelector((state) => state.dishes)
+  const { ingredients, selectedIngredients } = useAppSelector((state) => state.ingredients)
   const [swipeDirection, setSwipeDirection] = useState<Record<number, 'left' | 'right'>>({})
+
+  const selectedNamesKey = ingredients
+    .filter((i) => selectedIngredients.includes(i.id))
+    .map((i) => i.name)
+    .join(',')
+
+  useEffect(() => {
+    const selectedNames = selectedNamesKey.split(',').filter(Boolean)
+    if (dishes.length === 0 && selectedNames.length > 0 && suggestedDishNames.length === 0) {
+      dispatch(fetchSuggestedDishes(selectedNames))
+    }
+  }, [dishes.length, selectedNamesKey, dispatch, suggestedDishNames.length])
 
   const cardRefsStore = useRef<(CardAPI | null)[]>([])
   while (cardRefsStore.current.length < dishes.length) cardRefsStore.current.push(null)
@@ -71,10 +86,22 @@ export default function SwipeDeck({ dishes, onDishSelect, onComplete, onBack }: 
 
   if (dishes.length === 0) {
     return (
-      <Box sx={{ textAlign: 'center', py: 8 }}>
+      <Box sx={{ textAlign: 'center', py: 8, px: 2 }}>
         <Typography variant="h5" sx={{ color: 'rgba(255,255,255,0.4)', fontWeight: 700, mb: 2 }}>
-          Блюда не найдены
+          В базе нет подходящих блюд
         </Typography>
+        {suggestedDishNames.length > 0 && (
+          <Box sx={{ mb: 3, textAlign: 'left', maxWidth: 360, mx: 'auto' }}>
+            <Typography variant="subtitle2" sx={{ color: 'rgba(255,255,255,0.6)', mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Restaurant fontSize="small" /> ИИ предлагает приготовить:
+            </Typography>
+            <Box component="ul" sx={{ m: 0, pl: 2.5, color: 'rgba(255,255,255,0.9)' }}>
+              {suggestedDishNames.map((name) => (
+                <li key={name}>{name}</li>
+              ))}
+            </Box>
+          </Box>
+        )}
         <Button variant="outlined" onClick={onBack} startIcon={<ArrowBack />} sx={{ mt: 1 }}>
           Изменить ингредиенты
         </Button>
