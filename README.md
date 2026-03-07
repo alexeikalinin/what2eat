@@ -48,3 +48,10 @@ npm run preview
 | `npm run format`  | Форматирование Prettier     |
 
 База данных инициализируется при первом открытии приложения: загружаются `schema.sql` и `seed.sql` из `public/database/`.
+
+## Деплой на Vercel
+
+1. Импортируйте репозиторий в [Vercel](https://vercel.com) (GitHub → New Project).
+2. Сборка и выходная папка заданы в `vercel.json` (`npm run build`, `dist`). Менять ничего не нужно.
+3. (Опционально) Для распознавания ингредиентов по фото добавьте переменную окружения в **Settings → Environment Variables**: `VITE_OPENAI_API_KEY` со значением вашего OpenAI API ключа.
+4. Деплой: каждый push в `main` собирает и публикует приложение.

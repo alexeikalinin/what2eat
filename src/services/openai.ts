@@ -10,7 +10,10 @@ const API_URL = 'https://api.openai.com/v1/chat/completions'
 
 function getApiKey(): string {
   const key = import.meta.env.VITE_OPENAI_API_KEY
-  if (!key) throw new Error('VITE_OPENAI_API_KEY не задан в .env.local')
+  if (!key)
+    throw new Error(
+      'Для распознавания по фото задайте переменную VITE_OPENAI_API_KEY в настройках проекта (Vercel: Settings → Environment Variables).'
+    )
   return key
 }
 
