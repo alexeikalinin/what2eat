@@ -1,6 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
 import type { User } from '@supabase/supabase-js'
 
+// Патч Headers — в patch-headers.ts (подключается первым в main.tsx)
+
 // Жёстко приводим к строкам — иначе в части окружений (fetch/Headers) передача
 // не-строки даёт "Failed to execute 'set' on 'Headers': Invalid value"
 const SUPABASE_URL = String(import.meta.env.VITE_SUPABASE_URL ?? '').trim()
@@ -9,26 +11,30 @@ const SUPABASE_ANON_KEY = String(import.meta.env.VITE_SUPABASE_ANON_KEY ?? '').t
 const supabaseUrl = SUPABASE_URL || 'https://placeholder.supabase.co'
 const supabaseAnonKey = SUPABASE_ANON_KEY || 'placeholder'
 
-/** Обход "fetch/Headers: Invalid value": приводим URL и все заголовки к строкам перед вызовом fetch. */
+/** Допустимое значение для HTTP-заголовка: строка без управляющих символов (обход "Headers: Invalid value"). */
+function safeHeaderValue(v: unknown): string {
+  const s = v != null ? String(v) : ''
+  return s.replace(/[\x00-\x1F\x7F]/g, '').trim()
+}
+
+/** Обход "fetch/Headers: Invalid value": URL и все заголовки — только валидные строки. */
 function sanitizedFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
-  const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+  const url = typeof input === 'string' ? input : input instanceof URL ? input.href : (input as Request).url
   const safeInput = typeof url === 'string' && url ? url : String(url ?? '')
   if (!init?.headers) return fetch(safeInput, init)
   const headers = new Headers()
   const raw = init.headers
+  const setSafe = (key: unknown, value: unknown) => {
+    const k = safeHeaderValue(key)
+    if (!k) return
+    headers.set(k, safeHeaderValue(value))
+  }
   if (raw instanceof Headers) {
-    raw.forEach((value, key) => {
-      headers.set(key, value != null ? String(value) : '')
-    })
+    raw.forEach((value, key) => setSafe(key, value))
   } else if (Array.isArray(raw)) {
-    for (const [key, value] of raw) {
-      headers.set(key, value != null ? String(value) : '')
-    }
+    for (const [key, value] of raw) setSafe(key, value)
   } else {
-    for (const key of Object.keys(raw)) {
-      const value = (raw as Record<string, string>)[key]
-      headers.set(key, value != null ? String(value) : '')
-    }
+    for (const key of Object.keys(raw)) setSafe(key, (raw as Record<string, string>)[key])
   }
   return fetch(safeInput, { ...init, headers })
 }
