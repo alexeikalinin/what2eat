@@ -23,6 +23,7 @@ if (!PAT) {
 const migrations = [
   '012_expand_recipes.sql',
   '013_fix_all_dish_images.sql',
+  '014_fix_broken_images.sql',
 ]
 
 async function runQuery(sql: string, label: string) {
