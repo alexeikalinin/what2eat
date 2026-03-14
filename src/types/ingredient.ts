@@ -11,5 +11,6 @@ export interface Ingredient {
   name: string
   category: IngredientCategory
   image_url: string | null
+  show_in_selector: boolean
 }
 

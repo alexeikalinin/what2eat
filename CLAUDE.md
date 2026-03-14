@@ -16,7 +16,7 @@ No test runner is configured yet.
 
 ## Architecture
 
-**What2Eat** ("ЧтоЕсть") is a meal planning React SPA for a couple. The UI is in Russian. It runs entirely in the browser — no backend, no network requests.
+**What2Eat** ("ЧтоЕсть") is a meal planning React SPA for a couple. The UI is in Russian. It runs entirely in the browser — SQLite via WASM, with an optional OpenAI API for photo features (requires `VITE_OPENAI_API_KEY` env var).
 
 ### Data layer: sql.js (SQLite via WebAssembly)
 
@@ -38,16 +38,21 @@ No test runner is configured yet.
 - `ingredients.ts` — `getAllIngredients`, `getIngredientsByCategory`, `searchIngredients`
 - `recipes.ts` — `getRecipeByDishId` (joins recipes + dishes + recipe_ingredients in one query)
 - `dishes.ts` — dish search by ingredient IDs (ranks by match count, returns up to 5 results)
+- `openai.ts` — optional GPT-4o calls: `detectIngredientsFromImage`, `estimateCaloriesFromImage`, `suggestDishesByIngredients` (fallback when DB returns no results)
 
 ### State management: Redux Toolkit (`src/store/`)
 
-Three slices — all follow the same `{ data, loading, error }` pattern with `createAsyncThunk`:
+Six slices — async ones follow `{ data, loading, error }` with `createAsyncThunk`:
 
-| Slice | State |
-|-------|-------|
+| Slice | Key state |
+|-------|-----------|
 | `ingredients` | `ingredients[]`, `selectedIngredients: number[]`, loading, error |
-| `dishes` | `dishes[]`, loading, error |
+| `dishes` | `dishes[]`, `aiSuggestions: string[]`, loading, error |
 | `recipe` | `currentRecipe: Recipe \| null`, loading, error |
+| `filters` | search/filter criteria for dish search |
+| `swipe` | `likedDishIds[]`, `dislikedDishIds[]`, `currentIndex`, `sessionComplete` |
+| `weeklyPlanner` | `plan: Record<DayOfWeek, dishId \| null>` — persisted to `localStorage` |
+| `photo` | photo upload / AI analysis state |
 
 Use typed hooks from `src/hooks/redux.ts` (`useAppSelector`, `useAppDispatch`) instead of raw `useSelector`/`useDispatch`.
 
@@ -55,9 +60,16 @@ Use typed hooks from `src/hooks/redux.ts` (`useAppSelector`, `useAppDispatch`) i
 
 - Theme defined in `src/main.tsx` (primary `#1976d2`, secondary `#dc004e`)
 - Components in `src/components/` each have an `index.ts` re-export
-- `IngredientSelector` reads from Redux and dispatches `toggleIngredient(id)`
-- `DishList` triggers dish search when selected ingredients change
-- `RecipeView` fetches full recipe (with steps + per-recipe ingredient quantities) when a dish is selected
+- `IngredientSelector` — reads from Redux, dispatches `toggleIngredient(id)`
+- `DishList` / `DishCard` — triggers dish search when selected ingredients change; shows AI suggestions when DB returns nothing
+- `RecipeView` — fetches full recipe (steps + per-recipe quantities) when a dish is selected
+- `SearchFilters` — filter controls (difficulty, cooking time, category)
+- `SwipeDeck` / `SwipeCard` — Tinder-style swipe UI over dishes; dispatches `swipeDish`
+- `SwipeResults` — shows liked dishes after swipe session ends
+- `WeeklyPlanner` — drag/assign dishes to days Mon–Sun; plan persisted via `weeklyPlannerSlice`
+- `ShoppingList` — aggregates ingredients from weekly plan
+- `CalorieCard` — displays calorie estimate from OpenAI photo analysis
+- `PhotoUpload` — handles camera/file upload, HEIC→JPEG conversion, calls OpenAI to detect ingredients or estimate calories
 
 ### Key data flow
 
@@ -72,3 +84,7 @@ Use typed hooks from `src/hooks/redux.ts` (`useAppSelector`, `useAppDispatch`) i
 - `Dish` — with `difficulty` union
 - `Recipe` — contains `RecipeStep[]` (parsed from JSON) and `RecipeIngredient[]`
 - All exported from `src/types/index.ts`
+
+### Handoff (Claude Code ↔ Cursor)
+
+When switching environments (e.g. limits exhausted), use **`docs/PROGRESS.md`** to sync context. Rule `.cursor/rules/handoff-sync.mdc` instructs Cursor to update this file when the user says they’re switching or asks to “record where we left off”, and to read it when the user asks “where did we stop?”. Keep PROGRESS.md in git so both sides see it.

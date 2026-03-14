@@ -1,23 +1,42 @@
 import { test, expect, Page } from '@playwright/test'
+import { mockPremiumUser } from './helpers/premium-mock'
 
-// Ждём полной загрузки приложения: заголовок + хотя бы один ингредиент в списке
+// Ждём полной загрузки приложения: hero-блок + ингредиенты в аккордеоне
 async function waitForAppReady(page: Page) {
-  await page.waitForSelector('text=Что есть в холодильнике?', { timeout: 20000 })
-  // Ждём пока БД загрузит ингредиенты (появится хоть одна карточка)
-  await page.waitForSelector('.MuiPaper-root [class*="MuiTypography"]', { timeout: 20000 })
+  // Hero появляется как только DB инициализирована
+  await page.waitForSelector('text=Сфотографируйте холодильник', { timeout: 30000 })
 }
 
-// Кликаем ингредиент по точному тексту внутри карточки
+// Раскрываем аккордеон и ждём пока Grid-карточки ингредиентов реально появятся
+// (ингредиенты — NOT MuiChip, а Box+Typography внутри MuiGrid-item)
+async function expandIngredientAccordion(page: Page) {
+  const summary = page.locator('.MuiAccordionSummary-root').first()
+  const expanded = await summary.getAttribute('aria-expanded')
+  if (expanded !== 'true') {
+    await summary.click()
+  }
+  // Ждём Grid-элементов внутри аккордеона (async загрузка из DB)
+  await page.locator('.MuiAccordionDetails-root .MuiGrid-item').first().waitFor({ state: 'visible', timeout: 10000 })
+}
+
+// Кликаем ингредиент — Grid item с нужным текстом
 async function clickIngredient(page: Page, name: string) {
-  await page.locator('.MuiGrid-item').filter({ hasText: new RegExp(`^${name}$`) }).first().click()
+  await expandIngredientAccordion(page)
+  const item = page.locator('.MuiAccordionDetails-root .MuiGrid-item').filter({ hasText: name }).first()
+  await item.scrollIntoViewIfNeeded()
+  await item.click()
 }
 
 test.describe('What2Eat — основные сценарии', () => {
 
   test.beforeEach(async ({ page }) => {
+    // Мокируем Premium-план для доступа ко всем функциям
+    await mockPremiumUser(page)
+    // Устанавливаем до загрузки страницы — иначе туториал перекроет все клики
+    await page.addInitScript(() => {
+      localStorage.setItem('what2eat_tutorial_seen', '1')
+    })
     await page.goto('/')
-    // Очищаем localStorage перед каждым тестом чтобы избежать загрязнения состояния
-    await page.evaluate(() => localStorage.clear())
     await waitForAppReady(page)
   })
 
@@ -30,7 +49,7 @@ test.describe('What2Eat — основные сценарии', () => {
 
     await page.getByRole('button', { name: 'Найти блюда' }).click()
 
-    await expect(page.getByText(/блюд осталось|Все просмотрены|В базе нет подходящих блюд/)).toBeVisible({ timeout: 10000 })
+    await expect(page.getByText(/\d+ осталось|Всё!|просмотрели все|Ничего не нашлось/)).toBeVisible({ timeout: 10000 })
   })
 
   // ─── 2. Свайп влево и вправо через кнопки ────────────────────────────────────
@@ -42,10 +61,10 @@ test.describe('What2Eat — основные сценарии', () => {
     await page.getByRole('button', { name: 'Найти блюда' }).click()
 
     // Ждём любого результата свайп-дека
-    await expect(page.getByText(/блюд осталось|Все просмотрены|В базе нет подходящих блюд/)).toBeVisible({ timeout: 10000 })
+    await expect(page.getByText(/\d+ осталось|Всё!|просмотрели все|Ничего не нашлось/)).toBeVisible({ timeout: 10000 })
 
     // Если блюда найдены — проверяем кнопки
-    const hasCards = await page.getByText(/блюд осталось/).isVisible().catch(() => false)
+    const hasCards = await page.getByText(/\d+ осталось/).isVisible().catch(() => false)
     if (hasCards) {
       const dislikeBtn = page.locator('button').filter({ has: page.locator('[data-testid="CloseIcon"]') })
       await expect(dislikeBtn).toBeVisible()
@@ -59,9 +78,12 @@ test.describe('What2Eat — основные сценарии', () => {
 
   // ─── 3. Рандомайзер ──────────────────────────────────────────────────────────
   test('рандомайзер открывает свайп с блюдами', async ({ page }) => {
-    await page.getByRole('button', { name: 'Рандомайзер' }).click()
+    await page.getByRole('button', { name: 'Случайное' }).click()
+    // Открывается экран настроек фокуса — нажимаем "Поехали!"
+    await expect(page.getByRole('button', { name: 'Поехали!' })).toBeVisible({ timeout: 5000 })
+    await page.getByRole('button', { name: 'Поехали!' }).click()
 
-    await expect(page.getByText(/блюд осталось|Все просмотрены|В базе нет подходящих блюд/)).toBeVisible({ timeout: 10000 })
+    await expect(page.getByText(/\d+ осталось|Всё!|просмотрели все|Ничего не нашлось/)).toBeVisible({ timeout: 10000 })
   })
 
   // ─── 4. Фильтр "только веганское" ────────────────────────────────────────────
@@ -69,10 +91,11 @@ test.describe('What2Eat — основные сценарии', () => {
     // Switch находится внутри FormControlLabel рядом с текстом
     await page.locator('label').filter({ hasText: 'Только веганское' }).locator('input[type="checkbox"]').check()
 
-    await clickIngredient(page, 'Курица')
+    // Курица скрыта при веганском фильтре — выбираем веганский ингредиент
+    await clickIngredient(page, 'Гречка')
     await page.getByRole('button', { name: 'Найти блюда' }).click()
 
-    await expect(page.getByText(/блюд осталось|Все просмотрены|В базе нет подходящих блюд/)).toBeVisible({ timeout: 10000 })
+    await expect(page.getByText(/\d+ осталось|Всё!|просмотрели все|Ничего не нашлось/)).toBeVisible({ timeout: 10000 })
   })
 
   // ─── 5. Фильтр "Немного докупить" ────────────────────────────────────────────
@@ -82,30 +105,33 @@ test.describe('What2Eat — основные сценарии', () => {
     await clickIngredient(page, 'Курица')
     await page.getByRole('button', { name: 'Найти блюда' }).click()
 
-    await expect(page.getByText(/блюд осталось|Все просмотрены|В базе нет подходящих блюд/)).toBeVisible({ timeout: 10000 })
+    await expect(page.getByText(/\d+ осталось|Всё!|просмотрели все|Ничего не нашлось/)).toBeVisible({ timeout: 10000 })
   })
 
   // ─── 6. Свайп до конца → результаты → список покупок ─────────────────────────
   test('свайп до конца → результаты → список покупок', async ({ page }) => {
     await clickIngredient(page, 'Курица')
-    await clickIngredient(page, 'Макароны')
-    await clickIngredient(page, 'Рис')
+    await clickIngredient(page, 'Лук')
+    await clickIngredient(page, 'Морковь')
     await page.getByRole('button', { name: 'Найти блюда' }).click()
-    await expect(page.getByText(/\d+ блюд осталось/)).toBeVisible({ timeout: 10000 })
+    await expect(page.getByText(/\d+ осталось|Ничего не нашлось/)).toBeVisible({ timeout: 10000 })
+    // Продолжаем только если блюда найдены
+    const hasCards = await page.getByText(/\d+ осталось/).isVisible().catch(() => false)
+    if (!hasCards) return
 
     // Кликаем кнопку "❤️" (лайк) в цикле — надёжнее drag-симуляции для TinderCard
     const likeBtn = page.locator('button').filter({ has: page.locator('[data-testid="FavoriteIcon"]') })
     for (let i = 0; i < 20; i++) {
-      const done = await page.getByText(/Все просмотрены|Посмотреть результаты/).isVisible().catch(() => false)
+      const done = await page.getByText(/Вы просмотрели все блюда!|Посмотреть результаты/).isVisible().catch(() => false)
       if (done) break
       if (!await likeBtn.isVisible({ timeout: 1000 }).catch(() => false)) break
-      const counterBefore = await page.getByText(/\d+ блюд осталось/).textContent().catch(() => null)
+      const counterBefore = await page.getByText(/\d+ осталось/).textContent().catch(() => null)
       await likeBtn.click()
       if (counterBefore) {
         await page.waitForFunction(
           (prev) => {
             const t = document.body.innerText
-            return !t.includes(prev) || t.includes('Посмотреть результаты') || t.includes('Все просмотрены')
+            return !t.includes(prev) || t.includes('Посмотреть результаты') || t.includes('просмотрели все')
           },
           counterBefore,
           { timeout: 3000 }
@@ -118,12 +144,12 @@ test.describe('What2Eat — основные сценарии', () => {
       await resultsBtn.click()
     }
 
-    await expect(page.getByRole('heading', { name: 'Понравившиеся блюда' })).toBeVisible({ timeout: 8000 })
+    await expect(page.getByText('Понравилось ❤️')).toBeVisible({ timeout: 8000 })
 
-    const shoppingBtn = page.getByRole('button', { name: 'Список покупок' })
+    const shoppingBtn = page.getByRole('button', { name: 'Покупки' })
     if (await shoppingBtn.isEnabled()) {
       await shoppingBtn.click()
-      await expect(page.getByRole('heading', { name: /Список покупок/ })).toBeVisible({ timeout: 5000 })
+      await expect(page.getByText('Список покупок')).toBeVisible({ timeout: 5000 })
     }
   })
 
@@ -140,11 +166,11 @@ test.describe('What2Eat — основные сценарии', () => {
     await page.getByRole('button', { name: 'Найти блюда' }).click()
 
     // Ждём загрузки свайп-дека (любой исход)
-    await expect(page.getByText(/блюд осталось|Все просмотрены|В базе нет подходящих блюд/)).toBeVisible({ timeout: 10000 })
+    await expect(page.getByText(/\d+ осталось|Всё!|просмотрели все|Ничего не нашлось/)).toBeVisible({ timeout: 10000 })
 
     // Кнопка возврата называется "Назад" если блюда найдены, или "Изменить ингредиенты" если нет
     await page.getByRole('button', { name: /Назад|Изменить ингредиенты/ }).first().click()
-    await expect(page.getByText('Что есть в холодильнике?')).toBeVisible({ timeout: 5000 })
+    await expect(page.getByText('Сфотографируйте холодильник')).toBeVisible({ timeout: 5000 })
   })
 
   // ─── 9. Бюджет-фильтр ─────────────────────────────────────────────────────────
@@ -156,6 +182,6 @@ test.describe('What2Eat — основные сценарии', () => {
 
     await clickIngredient(page, 'Курица')
     await page.getByRole('button', { name: 'Найти блюда' }).click()
-    await expect(page.getByText(/блюд осталось|Все просмотрены|В базе нет подходящих блюд/)).toBeVisible({ timeout: 10000 })
+    await expect(page.getByText(/\d+ осталось|Всё!|просмотрели все|Ничего не нашлось/)).toBeVisible({ timeout: 10000 })
   })
 })

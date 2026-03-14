@@ -40,8 +40,11 @@ const swipeSlice = createSlice({
       state.currentIndex = 0
       state.sessionComplete = false
     },
+    unlikeDish: (state, action: PayloadAction<number>) => {
+      state.likedDishIds = state.likedDishIds.filter((id) => id !== action.payload)
+    },
   },
 })
 
-export const { swipeDish, markSessionComplete, resetSwipe } = swipeSlice.actions
+export const { swipeDish, markSessionComplete, resetSwipe, unlikeDish } = swipeSlice.actions
 export default swipeSlice.reducer

@@ -6,9 +6,11 @@ import {
   Box,
   Chip,
   Button,
+  IconButton,
 } from '@mui/material'
-import { AccessTime, People, AttachMoney, ShoppingCart } from '@mui/icons-material'
+import { AccessTime, People, AttachMoney, ShoppingCart, FavoriteBorder, Favorite } from '@mui/icons-material'
 import { motion } from 'framer-motion'
+import { useState } from 'react'
 import { Dish, Difficulty } from '../../types'
 import { DIFFICULTY_LABELS, DIFFICULTY_COLORS } from '../../utils/constants'
 import { getDishImageUrl } from '../../utils/imageUtils'
@@ -19,6 +21,8 @@ interface DishCardProps {
 }
 
 export default function DishCard({ dish, onSelect }: DishCardProps) {
+  const [liked, setLiked] = useState(false)
+
   const getDifficultyColor = (difficulty: Difficulty) => {
     return DIFFICULTY_COLORS[difficulty] || DIFFICULTY_COLORS.easy
   }
@@ -27,68 +31,98 @@ export default function DishCard({ dish, onSelect }: DishCardProps) {
 
   return (
     <motion.div
-      whileHover={{ y: -6, transition: { type: 'spring', stiffness: 300, damping: 20 } }}
+      whileHover={{ y: -4, transition: { type: 'spring', stiffness: 300, damping: 20 } }}
       whileTap={{ scale: 0.98 }}
       style={{ height: '100%' }}
     >
-      <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-        <CardMedia
-          component="img"
-          image={imageUrl}
-          alt={dish.name}
-          sx={{ height: 200, objectFit: 'cover' }}
-        />
-        <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', p: 2.5 }}>
-          <Typography variant="h6" component="h3" gutterBottom sx={{ fontWeight: 700, lineHeight: 1.3 }}>
+      <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        {/* Image with heart */}
+        <Box sx={{ position: 'relative' }}>
+          <CardMedia
+            component="img"
+            image={imageUrl}
+            alt={dish.name}
+            sx={{ height: 190, objectFit: 'cover' }}
+          />
+          {/* Heart icon top-right */}
+          <motion.div
+            style={{ position: 'absolute', top: 10, right: 10 }}
+            animate={liked ? { scale: [1, 1.35, 1] } : {}}
+            transition={{ type: 'spring', stiffness: 400, damping: 10 }}
+          >
+            <IconButton
+              size="small"
+              onClick={(e) => { e.stopPropagation(); setLiked((v) => !v) }}
+              sx={{
+                bgcolor: 'rgba(255,255,255,0.92)',
+                backdropFilter: 'blur(6px)',
+                width: 36,
+                height: 36,
+                borderRadius: '50%',
+                '&:hover': { bgcolor: 'white' },
+              }}
+            >
+              {liked
+                ? <Favorite sx={{ fontSize: 18, color: '#FF4D4D' }} />
+                : <FavoriteBorder sx={{ fontSize: 18, color: 'rgba(0,0,0,0.4)' }} />
+              }
+            </IconButton>
+          </motion.div>
+        </Box>
+
+        <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', p: 2 }}>
+          <Typography
+            variant="h6"
+            component="h3"
+            sx={{ fontWeight: 700, lineHeight: 1.3, color: '#1A1A1A', mb: 0.75, fontSize: '1rem' }}
+          >
             {dish.name}
           </Typography>
           {dish.description && (
-            <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2, flexGrow: 1, lineHeight: 1.5 }}>
+            <Typography
+              variant="body2"
+              sx={{ color: 'rgba(0,0,0,0.5)', mb: 1.5, flexGrow: 1, lineHeight: 1.5,
+                display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
+            >
               {dish.description}
             </Typography>
           )}
-          <Box sx={{ display: 'flex', gap: 0.75, mb: 2, flexWrap: 'wrap' }}>
+
+          {/* Meta chips */}
+          <Box sx={{ display: 'flex', gap: 0.75, mb: 1.5, flexWrap: 'wrap' }}>
             <Chip
-              icon={<AccessTime sx={{ fontSize: '14px !important' }} />}
+              icon={<AccessTime sx={{ fontSize: '13px !important' }} />}
               label={`${dish.cooking_time} мин`}
               size="small"
-              variant="outlined"
+              sx={{ bgcolor: '#FFF3E0', color: '#FF7A18', border: 'none', fontWeight: 600, fontSize: '0.77rem' }}
             />
             <Chip
-              icon={<People sx={{ fontSize: '14px !important' }} />}
+              icon={<People sx={{ fontSize: '13px !important' }} />}
               label={`${dish.servings} порц.`}
               size="small"
-              variant="outlined"
+              sx={{ bgcolor: '#F5F5F5', color: 'rgba(0,0,0,0.55)', border: 'none', fontSize: '0.77rem' }}
             />
             <Chip
               label={DIFFICULTY_LABELS[dish.difficulty]}
               size="small"
-              sx={{ bgcolor: getDifficultyColor(dish.difficulty), color: 'white', fontWeight: 600 }}
+              sx={{ bgcolor: getDifficultyColor(dish.difficulty), color: 'white', fontWeight: 700, fontSize: '0.77rem' }}
             />
             {dish.estimated_cost != null && (
               <Chip
-                icon={<AttachMoney sx={{ fontSize: '14px !important', color: '#4ade80 !important' }} />}
+                icon={<AttachMoney sx={{ fontSize: '13px !important', color: '#22C55E !important' }} />}
                 label={`$${dish.estimated_cost.toFixed(0)}`}
                 size="small"
-                sx={{
-                  bgcolor: 'rgba(34,197,94,0.15)',
-                  color: '#4ade80',
-                  border: '1px solid rgba(34,197,94,0.3)',
-                }}
+                sx={{ bgcolor: '#F0FDF4', color: '#22C55E', border: 'none', fontWeight: 600, fontSize: '0.77rem' }}
               />
             )}
             {dish.is_vegan && (
-              <Chip label="Веган" size="small" sx={{ bgcolor: 'rgba(34,197,94,0.15)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.25)' }} />
+              <Chip label="🌱 Веган" size="small" sx={{ bgcolor: '#F0FDF4', color: '#22C55E', border: 'none', fontSize: '0.77rem' }} />
             )}
             {!dish.is_vegan && dish.is_vegetarian && (
-              <Chip label="Вегетар." size="small" sx={{ bgcolor: 'rgba(251,191,36,0.15)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.25)' }} />
+              <Chip label="🥗 Вегетар." size="small" sx={{ bgcolor: '#FFFBEB', color: '#D97706', border: 'none', fontSize: '0.77rem' }} />
             )}
           </Box>
-          {dish.match_count !== undefined && (
-            <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.3)', mb: 1, display: 'block' }}>
-              Совпадений: {dish.match_count}
-            </Typography>
-          )}
+
           {dish.missing_ingredients && dish.missing_ingredients.length > 0 && (
             <Box
               sx={{
@@ -96,24 +130,25 @@ export default function DishCard({ dish, onSelect }: DishCardProps) {
                 alignItems: 'center',
                 gap: 0.75,
                 mb: 1.5,
-                bgcolor: 'rgba(251,191,36,0.08)',
-                border: '1px solid rgba(251,191,36,0.2)',
+                bgcolor: '#FFFBEB',
+                border: '1px solid #FDE68A',
                 borderRadius: 2,
                 px: 1.25,
                 py: 0.75,
               }}
             >
-              <ShoppingCart sx={{ fontSize: 13, color: '#fbbf24' }} />
-              <Typography variant="caption" sx={{ color: '#fbbf24', fontWeight: 500 }}>
+              <ShoppingCart sx={{ fontSize: 13, color: '#D97706' }} />
+              <Typography variant="caption" sx={{ color: '#D97706', fontWeight: 500 }}>
                 Докупить: {dish.missing_ingredients.map(i => i.name).join(', ')}
               </Typography>
             </Box>
           )}
+
           <Button
             variant="contained"
             fullWidth
             onClick={() => onSelect(dish.id)}
-            sx={{ mt: 'auto' }}
+            sx={{ mt: 'auto', py: 1, fontSize: '0.875rem' }}
           >
             Посмотреть рецепт
           </Button>

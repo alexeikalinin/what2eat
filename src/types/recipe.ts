@@ -16,6 +16,8 @@ export interface Recipe {
   id: number
   dish_id: number
   dish_name: string
+  title: string
+  source_url?: string | null
   instructions: RecipeStep[]
   ingredients: RecipeIngredient[]
   cooking_time: number

@@ -12,10 +12,12 @@ import {
   FormControl,
   InputLabel,
   Alert,
+  IconButton,
 } from '@mui/material'
-import { ArrowBack, ShoppingCart, CalendarMonth, Refresh } from '@mui/icons-material'
+import { ArrowBack, ShoppingCart, CalendarMonth, Refresh, DeleteOutline } from '@mui/icons-material'
+import { motion } from 'framer-motion'
 import { useAppSelector, useAppDispatch } from '../../hooks/redux'
-import { resetSwipe } from '../../store/slices/swipeSlice'
+import { resetSwipe, unlikeDish } from '../../store/slices/swipeSlice'
 import { assignDishToDay, DayOfWeek } from '../../store/slices/weeklyPlannerSlice'
 import DishCard from '../DishList/DishCard'
 
@@ -68,76 +70,128 @@ export default function SwipeResults({ onDishSelect, onBack, onRepeat, onShoppin
   }
 
   return (
-    <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 1 }}>
-        <Button variant="text" onClick={onBack} startIcon={<ArrowBack />}>
-          Назад
-        </Button>
-        <Typography variant="h5">Понравившиеся блюда</Typography>
-        <Box sx={{ display: 'flex', gap: 1 }}>
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+    >
+      <Box>
+        {/* Header */}
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 1 }}>
           <Button
-            variant="outlined"
-            startIcon={<ShoppingCart />}
-            onClick={onShoppingList}
-            disabled={likedDishes.length === 0}
-            size="small"
+            variant="text"
+            onClick={onBack}
+            startIcon={<ArrowBack />}
+            sx={{ color: 'rgba(0,0,0,0.45)' }}
           >
-            Список покупок
+            Назад
           </Button>
-          <Button variant="outlined" startIcon={<Refresh />} onClick={handleRepeat} size="small">
-            Повторить
-          </Button>
-        </Box>
-      </Box>
-
-      {likedDishes.length === 0 ? (
-        <Alert severity="info" sx={{ mb: 3 }}>
-          Вы не выбрали ни одного блюда. Попробуйте ещё раз!
-        </Alert>
-      ) : (
-        <Grid container spacing={2}>
-          {likedDishes.map((dish) => (
-            <Grid item xs={12} sm={6} md={4} key={dish.id}>
-              <Box sx={{ position: 'relative' }}>
-                <DishCard dish={dish} onSelect={onDishSelect} />
-                <Button
-                  size="small"
-                  startIcon={<CalendarMonth />}
-                  onClick={() => openPlanDialog(dish.id)}
-                  sx={{ mt: 1, width: '100%' }}
-                  variant="outlined"
-                  color="secondary"
-                >
-                  В планировщик
-                </Button>
-              </Box>
-            </Grid>
-          ))}
-        </Grid>
-      )}
-
-      <Dialog open={planDialog.open} onClose={() => setPlanDialog({ open: false, dishId: null })}>
-        <DialogTitle>Добавить в планировщик</DialogTitle>
-        <DialogContent sx={{ minWidth: 280, pt: 2 }}>
-          <FormControl fullWidth sx={{ mb: 2 }}>
-            <InputLabel>День недели</InputLabel>
-            <Select
-              value={selectedDay}
-              label="День недели"
-              onChange={(e) => setSelectedDay(e.target.value as DayOfWeek)}
+          <Typography variant="h5" sx={{ fontWeight: 700, color: '#1A1A1A' }}>
+            Понравилось ❤️
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button
+              variant="outlined"
+              startIcon={<ShoppingCart sx={{ fontSize: 16 }} />}
+              onClick={onShoppingList}
+              disabled={likedDishes.length === 0}
+              size="small"
+              sx={{ fontSize: '0.8rem' }}
             >
-              {(Object.entries(DAY_LABELS) as [DayOfWeek, string][]).map(([key, label]) => (
-                <MenuItem key={key} value={key}>
-                  {label}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          <Button variant="contained" fullWidth onClick={handleAddToPlan}>
-            Добавить
-          </Button>
-        </DialogContent>
-      </Dialog>
-    </Box>
+              Покупки
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<Refresh sx={{ fontSize: 16 }} />}
+              onClick={handleRepeat}
+              size="small"
+              sx={{ fontSize: '0.8rem' }}
+            >
+              Ещё раз
+            </Button>
+          </Box>
+        </Box>
+
+        {likedDishes.length === 0 ? (
+          <Box sx={{ textAlign: 'center', py: 6 }}>
+            <Box sx={{ fontSize: '3rem', mb: 2 }}>😔</Box>
+            <Typography variant="h6" sx={{ fontWeight: 600, color: '#1A1A1A', mb: 1 }}>
+              Ничего не выбрано
+            </Typography>
+            <Alert severity="info" sx={{ maxWidth: 400, mx: 'auto' }}>
+              Попробуйте свайпать ещё раз!
+            </Alert>
+          </Box>
+        ) : (
+          <Grid container spacing={2}>
+            {likedDishes.map((dish, i) => (
+              <Grid item xs={12} sm={6} key={dish.id}>
+                <motion.div
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.07, duration: 0.3 }}
+                >
+                  <Box sx={{ position: 'relative' }}>
+                    <IconButton
+                      size="small"
+                      onClick={() => dispatch(unlikeDish(dish.id))}
+                      sx={{
+                        position: 'absolute', top: 8, right: 8, zIndex: 2,
+                        bgcolor: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(4px)',
+                        width: 32, height: 32,
+                        '&:hover': { bgcolor: '#FFECEC', color: '#FF4D4D' },
+                      }}
+                    >
+                      <DeleteOutline sx={{ fontSize: 17, color: 'rgba(0,0,0,0.45)' }} />
+                    </IconButton>
+                    <DishCard dish={dish} onSelect={onDishSelect} />
+                    <Button
+                      size="small"
+                      startIcon={<CalendarMonth sx={{ fontSize: 15 }} />}
+                      onClick={() => openPlanDialog(dish.id)}
+                      fullWidth
+                      sx={{
+                        mt: 1,
+                        borderRadius: 3,
+                        borderColor: '#E9E9E9',
+                        color: 'rgba(0,0,0,0.55)',
+                        fontSize: '0.82rem',
+                        '&:hover': { borderColor: '#FF7A18', color: '#FF7A18', bgcolor: '#FFF8F0' },
+                      }}
+                      variant="outlined"
+                    >
+                      В планировщик
+                    </Button>
+                  </Box>
+                </motion.div>
+              </Grid>
+            ))}
+          </Grid>
+        )}
+
+        <Dialog open={planDialog.open} onClose={() => setPlanDialog({ open: false, dishId: null })}>
+          <DialogTitle sx={{ fontWeight: 700 }}>Добавить в планировщик</DialogTitle>
+          <DialogContent sx={{ minWidth: 280, pt: 2 }}>
+            <FormControl fullWidth sx={{ mb: 2.5 }}>
+              <InputLabel>День недели</InputLabel>
+              <Select
+                value={selectedDay}
+                label="День недели"
+                onChange={(e) => setSelectedDay(e.target.value as DayOfWeek)}
+              >
+                {(Object.entries(DAY_LABELS) as [DayOfWeek, string][]).map(([key, label]) => (
+                  <MenuItem key={key} value={key}>
+                    {label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <Button variant="contained" fullWidth onClick={handleAddToPlan} sx={{ py: 1.25 }}>
+              Добавить
+            </Button>
+          </DialogContent>
+        </Dialog>
+      </Box>
+    </motion.div>
   )
 }

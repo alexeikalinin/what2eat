@@ -1,78 +1,83 @@
-import { getDatabase } from './database'
+import { supabase } from './supabase'
 import { Recipe, RecipeStep, RecipeIngredient } from '../types'
 
-export async function getRecipeByDishId(dishId: number): Promise<Recipe | null> {
-  const db = getDatabase()
-  
-  // Получаем рецепт и информацию о блюде
-  const stmt = db.prepare(`
-    SELECT 
-      r.id,
-      r.dish_id,
-      d.name as dish_name,
-      r.instructions,
-      d.cooking_time,
-      d.difficulty,
-      d.servings,
-      d.image_url
-    FROM recipes r
-    JOIN dishes d ON r.dish_id = d.id
-    WHERE r.dish_id = ?
-  `)
-  stmt.bind([dishId])
-  
-  if (!stmt.step()) {
-    stmt.free()
-    return null
-  }
-  
-  const row = stmt.getAsObject()
-  stmt.free()
-  
-  // Парсим инструкции из JSON
+type DishRow = {
+  name: string
+  cooking_time: number
+  difficulty: string
+  servings: number
+  image_url: string | null
+}
+
+async function buildRecipe(recipeData: {
+  id: number
+  dish_id: number
+  title: string
+  source_url?: string | null
+  instructions: string
+  dishes: unknown
+}): Promise<Recipe> {
+  const dish = recipeData.dishes as DishRow
+
   let instructions: RecipeStep[] = []
   try {
-    instructions = JSON.parse(row.instructions as string) as RecipeStep[]
+    instructions = JSON.parse(recipeData.instructions) as RecipeStep[]
   } catch (e) {
     console.error('Error parsing instructions:', e)
   }
-  
-  // Получаем ингредиенты рецепта
-  const ingredientsStmt = db.prepare(`
-    SELECT 
-      ri.ingredient_id,
-      i.name as ingredient_name,
-      ri.quantity,
-      ri.unit
-    FROM recipe_ingredients ri
-    JOIN ingredients i ON ri.ingredient_id = i.id
-    WHERE ri.recipe_id = ?
-    ORDER BY i.name
-  `)
-  ingredientsStmt.bind([row.id])
-  
-  const ingredients: RecipeIngredient[] = []
-  while (ingredientsStmt.step()) {
-    const ingRow = ingredientsStmt.getAsObject()
-    ingredients.push({
-      ingredient_id: ingRow.ingredient_id as number,
-      ingredient_name: ingRow.ingredient_name as string,
-      quantity: ingRow.quantity as number,
-      unit: ingRow.unit as string,
-    })
-  }
-  ingredientsStmt.free()
-  
+
+  const { data: ingData } = await supabase
+    .from('recipe_ingredients')
+    .select('ingredient_id, quantity, unit, ingredients!inner(name)')
+    .eq('recipe_id', recipeData.id)
+    .order('ingredient_id')
+
+  const ingredients: RecipeIngredient[] = (ingData ?? []).map((row) => ({
+    ingredient_id: row.ingredient_id as number,
+    ingredient_name: ((row.ingredients as unknown) as { name: string }).name,
+    quantity: row.quantity as number,
+    unit: row.unit as string,
+  }))
+
   return {
-    id: row.id as number,
-    dish_id: row.dish_id as number,
-    dish_name: row.dish_name as string,
+    id: recipeData.id,
+    dish_id: recipeData.dish_id,
+    dish_name: dish.name,
+    title: recipeData.title ?? 'Классический',
+    source_url: recipeData.source_url ?? null,
     instructions,
     ingredients,
-    cooking_time: row.cooking_time as number,
-    difficulty: row.difficulty as Recipe['difficulty'],
-    servings: row.servings as number,
-    image_url: (row.image_url as string) || null,
+    cooking_time: dish.cooking_time,
+    difficulty: dish.difficulty as Recipe['difficulty'],
+    servings: dish.servings,
+    image_url: dish.image_url || null,
   }
 }
 
+/** Возвращает первый (или единственный) рецепт блюда */
+export async function getRecipeByDishId(dishId: number): Promise<Recipe | null> {
+  const recipes = await getAllRecipesForDish(dishId)
+  return recipes[0] ?? null
+}
+
+/** Возвращает ВСЕ варианты рецептов блюда (для показа Рецепт 1 / Рецепт 2 …) */
+export async function getAllRecipesForDish(dishId: number): Promise<Recipe[]> {
+  const { data, error } = await supabase
+    .from('recipes')
+    .select('id, dish_id, title, source_url, instructions, dishes!inner(name, cooking_time, difficulty, servings, image_url)')
+    .eq('dish_id', dishId)
+    .order('id')
+
+  if (error) {
+    console.error('Error fetching recipes:', error)
+    return []
+  }
+  if (!data || data.length === 0) return []
+
+  const results: Recipe[] = []
+  for (const row of data) {
+    const recipe = await buildRecipe(row as Parameters<typeof buildRecipe>[0])
+    results.push(recipe)
+  }
+  return results
+}

@@ -57,3 +57,10 @@ CREATE INDEX IF NOT EXISTS idx_ingredients_category ON ingredients(category);
 CREATE INDEX IF NOT EXISTS idx_recipe_ingredients_recipe_id ON recipe_ingredients(recipe_id);
 CREATE INDEX IF NOT EXISTS idx_dishes_difficulty ON dishes(difficulty);
 
+-- Миграция: тип кухни и тип приёма пищи (идемпотентно через ALTER TABLE)
+ALTER TABLE dishes ADD COLUMN cuisine_type TEXT NOT NULL DEFAULT 'russian';
+ALTER TABLE dishes ADD COLUMN meal_type TEXT NOT NULL DEFAULT 'dinner';
+
+-- Миграция: показывать ли ингредиент в селекторе (0 = только для распознавания по фото)
+ALTER TABLE ingredients ADD COLUMN show_in_selector INTEGER NOT NULL DEFAULT 1;
+

@@ -2,20 +2,16 @@ import {
   Box,
   Typography,
   Paper,
-  List,
-  ListItem,
-  ListItemText,
-  Divider,
   Chip,
   Button,
   CircularProgress,
   Alert,
   Grid,
 } from '@mui/material'
-import { ArrowBack, AccessTime, People } from '@mui/icons-material'
+import { ArrowBack, AccessTime, People, OpenInNew } from '@mui/icons-material'
 import { motion } from 'framer-motion'
 import { useAppSelector, useAppDispatch } from '../../hooks/redux'
-import { clearRecipe } from '../../store/slices/recipeSlice'
+import { clearRecipe, setVariant } from '../../store/slices/recipeSlice'
 import { DIFFICULTY_LABELS, DIFFICULTY_COLORS } from '../../utils/constants'
 import { Difficulty } from '../../types'
 import { getDishImageUrl } from '../../utils/imageUtils'
@@ -26,7 +22,8 @@ interface RecipeViewProps {
 
 export default function RecipeView({ onBack }: RecipeViewProps) {
   const dispatch = useAppDispatch()
-  const { currentRecipe, loading, error } = useAppSelector((state) => state.recipe)
+  const { recipes, selectedVariant, loading, error } = useAppSelector((state) => state.recipe)
+  const currentRecipe = recipes[selectedVariant] ?? null
 
   const handleBack = () => {
     dispatch(clearRecipe())
@@ -39,8 +36,9 @@ export default function RecipeView({ onBack }: RecipeViewProps) {
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', my: 8 }}>
-        <CircularProgress sx={{ color: '#FF4D4D' }} />
+      <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', my: 8, gap: 2 }}>
+        <CircularProgress sx={{ color: '#FF7A18' }} />
+        <Typography variant="body2" color="text.secondary">Загружаем рецепт…</Typography>
       </Box>
     )
   }
@@ -49,9 +47,7 @@ export default function RecipeView({ onBack }: RecipeViewProps) {
     return (
       <Box>
         <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>
-        <Button variant="outlined" onClick={handleBack} startIcon={<ArrowBack />}>
-          Назад
-        </Button>
+        <Button variant="outlined" onClick={handleBack} startIcon={<ArrowBack />}>Назад</Button>
       </Box>
     )
   }
@@ -60,9 +56,7 @@ export default function RecipeView({ onBack }: RecipeViewProps) {
     return (
       <Box>
         <Alert severity="info">Рецепт не найден</Alert>
-        <Button variant="outlined" onClick={handleBack} startIcon={<ArrowBack />} sx={{ mt: 2 }}>
-          Назад
-        </Button>
+        <Button variant="outlined" onClick={handleBack} startIcon={<ArrowBack />} sx={{ mt: 2 }}>Назад</Button>
       </Box>
     )
   }
@@ -70,143 +64,218 @@ export default function RecipeView({ onBack }: RecipeViewProps) {
   const imageUrl = getDishImageUrl(currentRecipe.dish_name, currentRecipe.image_url)
 
   return (
-    <Box>
-      {/* Hero image with overlay */}
-      <Box
-        sx={{
-          position: 'relative',
-          height: 340,
-          borderRadius: 4,
-          overflow: 'hidden',
-          mb: 3,
-        }}
-      >
-        <Box
-          component="img"
-          src={imageUrl}
-          alt={currentRecipe.dish_name}
-          sx={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-        />
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35 }}
+    >
+      <Box sx={{ pb: 4 }}>
+        {/* Full-width hero image */}
         <Box
           sx={{
-            position: 'absolute',
-            inset: 0,
-            background: 'linear-gradient(to top, rgba(10,10,10,0.95) 0%, rgba(10,10,10,0.3) 50%, transparent 100%)',
+            position: 'relative',
+            height: { xs: 260, sm: 320 },
+            borderRadius: 4,
+            overflow: 'hidden',
+            mb: 3,
+            mx: -2,
           }}
-        />
-        <Box sx={{ position: 'absolute', bottom: 0, left: 0, right: 0, p: 3 }}>
+        >
+          <Box
+            component="img"
+            src={imageUrl}
+            alt={currentRecipe.dish_name}
+            sx={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+          />
+          <Box
+            sx={{
+              position: 'absolute',
+              inset: 0,
+              background: 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.2) 50%, transparent 100%)',
+            }}
+          />
           <Button
             variant="text"
             onClick={handleBack}
-            startIcon={<ArrowBack />}
+            startIcon={<ArrowBack sx={{ fontSize: 18 }} />}
             size="small"
-            sx={{ mb: 1.5, color: 'rgba(255,255,255,0.7)', '&:hover': { color: 'white' } }}
+            sx={{
+              position: 'absolute',
+              top: 12,
+              left: 12,
+              color: 'white',
+              bgcolor: 'rgba(0,0,0,0.3)',
+              backdropFilter: 'blur(8px)',
+              borderRadius: 10,
+              px: 1.5,
+              py: 0.75,
+              fontWeight: 600,
+              '&:hover': { bgcolor: 'rgba(0,0,0,0.45)' },
+            }}
           >
             Назад
           </Button>
-          <Typography
-            variant="h3"
-            sx={{
-              color: 'white',
-              fontWeight: 800,
-              letterSpacing: '-0.02em',
-              lineHeight: 1.1,
-              textShadow: '0 2px 16px rgba(0,0,0,0.5)',
-            }}
-          >
-            {currentRecipe.dish_name}
-          </Typography>
+          <Box sx={{ position: 'absolute', bottom: 0, left: 0, right: 0, p: '16px 20px 20px' }}>
+            <Typography
+              variant="h2"
+              sx={{
+                color: 'white',
+                fontWeight: 800,
+                fontSize: { xs: '1.5rem', sm: '1.8rem' },
+                letterSpacing: '-0.025em',
+                lineHeight: 1.15,
+                textShadow: '0 2px 8px rgba(0,0,0,0.3)',
+              }}
+            >
+              {currentRecipe.dish_name}
+            </Typography>
+          </Box>
         </Box>
-      </Box>
 
-      <Grid container spacing={3}>
-        <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 2.5, mb: 2 }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2, color: 'rgba(255,255,255,0.9)' }}>
-              Информация
+        {/* Recipe variant selector (shown only when multiple variants exist) */}
+        {recipes.length > 1 && (
+          <Box sx={{ mb: 2.5 }}>
+            <Typography variant="caption" sx={{ color: 'rgba(0,0,0,0.45)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', mb: 1, display: 'block' }}>
+              Вариант рецепта
             </Typography>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-              <Chip
-                icon={<AccessTime />}
-                label={`${currentRecipe.cooking_time} минут`}
-                variant="outlined"
-              />
-              <Chip
-                icon={<People />}
-                label={`${currentRecipe.servings} порций`}
-                variant="outlined"
-              />
-              <Chip
-                label={DIFFICULTY_LABELS[currentRecipe.difficulty]}
-                sx={{ bgcolor: getDifficultyColor(currentRecipe.difficulty), color: 'white', fontWeight: 600 }}
-              />
-            </Box>
-          </Paper>
-
-          <Paper sx={{ p: 2.5 }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2, color: 'rgba(255,255,255,0.9)' }}>
-              Ингредиенты
-            </Typography>
-            <List dense disablePadding>
-              {currentRecipe.ingredients.map((ing, index) => (
-                <ListItem key={index} sx={{ px: 0, py: 0.5 }}>
-                  <ListItemText
-                    primary={<Typography variant="body2" sx={{ fontWeight: 500 }}>{ing.ingredient_name}</Typography>}
-                    secondary={<Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.4)' }}>{ing.quantity} {ing.unit}</Typography>}
-                  />
-                </ListItem>
+            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+              {recipes.map((r, i) => (
+                <Chip
+                  key={r.id}
+                  label={r.title}
+                  onClick={() => dispatch(setVariant(i))}
+                  variant={selectedVariant === i ? 'filled' : 'outlined'}
+                  sx={{
+                    fontWeight: 600,
+                    fontSize: '0.82rem',
+                    cursor: 'pointer',
+                    ...(selectedVariant === i
+                      ? { bgcolor: '#FF7A18', color: 'white', borderColor: '#FF7A18' }
+                      : { color: 'rgba(0,0,0,0.6)', borderColor: '#E0E0E0' }),
+                  }}
+                />
               ))}
-            </List>
-          </Paper>
-        </Grid>
+            </Box>
+          </Box>
+        )}
 
-        <Grid item xs={12} md={8}>
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2.5, color: 'rgba(255,255,255,0.9)' }}>
-              Инструкция
+        {/* Info row */}
+        <Box sx={{ display: 'flex', gap: 1, mb: 3, flexWrap: 'wrap', alignItems: 'center' }}>
+          <Chip
+            icon={<AccessTime sx={{ fontSize: '15px !important' }} />}
+            label={`${currentRecipe.cooking_time} мин`}
+            sx={{ bgcolor: '#FFF3E0', color: '#FF7A18', border: 'none', fontWeight: 600 }}
+          />
+          <Chip
+            icon={<People sx={{ fontSize: '15px !important' }} />}
+            label={`${currentRecipe.servings} порц.`}
+            sx={{ bgcolor: '#F0F4FF', color: '#6366F1', border: 'none', fontWeight: 600 }}
+          />
+          <Chip
+            label={DIFFICULTY_LABELS[currentRecipe.difficulty]}
+            sx={{ bgcolor: getDifficultyColor(currentRecipe.difficulty), color: 'white', fontWeight: 700 }}
+          />
+          {currentRecipe.source_url && (
+            <Chip
+              icon={<OpenInNew sx={{ fontSize: '14px !important' }} />}
+              label="Источник"
+              component="a"
+              href={currentRecipe.source_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              clickable
+              variant="outlined"
+              sx={{ color: 'rgba(0,0,0,0.55)', borderColor: '#E0E0E0', fontWeight: 500, fontSize: '0.78rem' }}
+            />
+          )}
+        </Box>
+
+        <Grid container spacing={2.5}>
+          {/* Ingredients */}
+          <Grid item xs={12} md={4}>
+            <Paper elevation={1} sx={{ p: 2.5, borderRadius: 3 }}>
+              <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, color: '#1A1A1A' }}>
+                🧂 Ингредиенты
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                {currentRecipe.ingredients.map((ing, index) => (
+                  <Box
+                    key={index}
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      py: 1,
+                      borderBottom: index < currentRecipe.ingredients.length - 1 ? '1px solid #F5F5F5' : 'none',
+                    }}
+                  >
+                    <Typography variant="body2" sx={{ fontWeight: 500, color: '#1A1A1A' }}>
+                      {ing.ingredient_name}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: 'rgba(0,0,0,0.45)', fontWeight: 500 }}>
+                      {ing.quantity} {ing.unit}
+                    </Typography>
+                  </Box>
+                ))}
+              </Box>
+            </Paper>
+          </Grid>
+
+          {/* Steps */}
+          <Grid item xs={12} md={8}>
+            <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, color: '#1A1A1A' }}>
+              👨‍🍳 Приготовление
             </Typography>
-            <Divider sx={{ mb: 2.5 }} />
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               {currentRecipe.instructions.map((step, index) => (
                 <motion.div
-                  key={index}
-                  initial={{ opacity: 0, x: -16 }}
+                  key={`${selectedVariant}-${index}`}
+                  initial={{ opacity: 0, x: -12 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.07, duration: 0.3 }}
+                  transition={{ delay: index * 0.05, duration: 0.28 }}
                 >
-                  <ListItem sx={{ flexDirection: 'column', alignItems: 'flex-start', px: 0, py: 2 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
-                      <Box
-                        sx={{
-                          width: 32,
-                          height: 32,
-                          borderRadius: '50%',
-                          background: 'linear-gradient(135deg, #FF4D4D 0%, #FF9500 100%)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          flexShrink: 0,
-                          boxShadow: '0 2px 12px rgba(255,77,77,0.35)',
-                        }}
-                      >
-                        <Typography variant="caption" sx={{ color: 'white', fontWeight: 800, fontSize: '0.75rem' }}>
-                          {step.step}
-                        </Typography>
-                      </Box>
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      p: 2,
+                      borderRadius: 3,
+                      border: '1px solid #F0F0F0',
+                      bgcolor: '#FFFFFF',
+                      display: 'flex',
+                      gap: 2,
+                      alignItems: 'flex-start',
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        minWidth: 32,
+                        height: 32,
+                        borderRadius: '50%',
+                        background: 'linear-gradient(135deg, #FF7A18 0%, #FFB347 100%)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                        boxShadow: '0 2px 8px rgba(255,122,24,0.3)',
+                      }}
+                    >
+                      <Typography sx={{ color: 'white', fontWeight: 800, fontSize: '0.8rem' }}>
+                        {step.step}
+                      </Typography>
                     </Box>
-                    <Typography variant="body1" sx={{ color: 'rgba(255,255,255,0.85)', lineHeight: 1.6 }}>
+                    <Typography
+                      variant="body2"
+                      sx={{ color: '#3A3A3A', lineHeight: 1.65, pt: 0.5, fontSize: '0.9rem' }}
+                    >
                       {step.description}
                     </Typography>
-                    {index < currentRecipe.instructions.length - 1 && (
-                      <Divider sx={{ width: '100%', mt: 2 }} />
-                    )}
-                  </ListItem>
+                  </Paper>
                 </motion.div>
               ))}
             </Box>
-          </Paper>
+          </Grid>
         </Grid>
-      </Grid>
-    </Box>
+      </Box>
+    </motion.div>
   )
 }

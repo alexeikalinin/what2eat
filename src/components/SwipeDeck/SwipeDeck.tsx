@@ -11,8 +11,12 @@ import { Close, Favorite, ArrowBack, Info, Restaurant } from '@mui/icons-materia
 import { Dish } from '../../types'
 import { useAppDispatch, useAppSelector } from '../../hooks/redux'
 import { swipeDish, markSessionComplete, resetSwipe } from '../../store/slices/swipeSlice'
+import { incrementSwipeUsage } from '../../store/slices/userSlice'
 import { fetchSuggestedDishes } from '../../store/slices/dishesSlice'
 import SwipeCard from './SwipeCard'
+import { usePlan } from '../../hooks/usePlan'
+import PaywallModal from '../PaywallModal'
+import { useModalContext } from '../../contexts/ModalContext'
 
 interface SwipeDeckProps {
   dishes: Dish[]
@@ -27,6 +31,10 @@ export default function SwipeDeck({ dishes, onDishSelect, onComplete, onBack }: 
   const { suggestedDishNames } = useAppSelector((state) => state.dishes)
   const { ingredients, selectedIngredients } = useAppSelector((state) => state.ingredients)
   const [swipeDirection, setSwipeDirection] = useState<Record<number, 'left' | 'right'>>({})
+  const [paywallOpen, setPaywallOpen] = useState(false)
+
+  const { canSwipe, swipesRemaining, trackLocalSwipe, isPremium, DAILY_SWIPE_LIMIT } = usePlan()
+  const { openAuth } = useModalContext()
 
   const selectedNamesKey = ingredients
     .filter((i) => selectedIngredients.includes(i.id))
@@ -48,35 +56,30 @@ export default function SwipeDeck({ dishes, onDishSelect, onComplete, onBack }: 
   }
 
   const remaining = dishes.length - currentIndex
-  const topDishIndex = dishes.length - 1 - currentIndex
 
   const handleSwipe = useCallback(
     (direction: string, dishId: number) => {
       const dir = direction === 'right' ? 'right' : 'left'
       dispatch(swipeDish({ dishId, direction: dir }))
+      dispatch(incrementSwipeUsage())
+      trackLocalSwipe()
       setSwipeDirection(prev => ({ ...prev, [dishId]: dir }))
     },
-    [dispatch]
-  )
-
-  const handleCardLeft = useCallback(
-    (_title: string, newIndex: number) => {
-      if (newIndex < 0) {
-        dispatch(markSessionComplete())
-        onComplete()
-      }
-    },
-    [dispatch, onComplete]
+    [dispatch, trackLocalSwipe]
   )
 
   const swipe = (dir: 'left' | 'right') => {
-    const card = cardRefsStore.current[topDishIndex]
+    if (!canSwipe()) {
+      setPaywallOpen(true)
+      return
+    }
+    const card = cardRefsStore.current[currentIndex]
     if (card) card.swipe(dir)
   }
 
   const handleInfoClick = () => {
-    if (topDishIndex >= 0 && topDishIndex < dishes.length) {
-      onDishSelect(dishes[topDishIndex].id)
+    if (currentIndex < dishes.length) {
+      onDishSelect(dishes[currentIndex].id)
     }
   }
 
@@ -87,22 +90,51 @@ export default function SwipeDeck({ dishes, onDishSelect, onComplete, onBack }: 
   if (dishes.length === 0) {
     return (
       <Box sx={{ textAlign: 'center', py: 8, px: 2 }}>
-        <Typography variant="h5" sx={{ color: 'rgba(255,255,255,0.4)', fontWeight: 700, mb: 2 }}>
-          В базе нет подходящих блюд
+        <Box
+          sx={{
+            width: 72,
+            height: 72,
+            borderRadius: '50%',
+            bgcolor: '#FFF3E0',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            mx: 'auto',
+            mb: 2,
+          }}
+        >
+          <Restaurant sx={{ color: '#FF7A18', fontSize: 36 }} />
+        </Box>
+        <Typography variant="h5" sx={{ color: '#1A1A1A', fontWeight: 700, mb: 1 }}>
+          Ничего не нашлось
+        </Typography>
+        <Typography variant="body2" sx={{ color: 'rgba(0,0,0,0.5)', mb: 3 }}>
+          Попробуйте выбрать другие ингредиенты
         </Typography>
         {suggestedDishNames.length > 0 && (
-          <Box sx={{ mb: 3, textAlign: 'left', maxWidth: 360, mx: 'auto' }}>
-            <Typography variant="subtitle2" sx={{ color: 'rgba(255,255,255,0.6)', mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Restaurant fontSize="small" /> ИИ предлагает приготовить:
+          <Box
+            sx={{
+              mb: 3,
+              textAlign: 'left',
+              maxWidth: 360,
+              mx: 'auto',
+              bgcolor: '#FFF8F0',
+              border: '1px solid #FFE0B2',
+              borderRadius: 3,
+              p: 2,
+            }}
+          >
+            <Typography variant="subtitle2" sx={{ color: '#FF7A18', mb: 1, fontWeight: 600 }}>
+              ИИ предлагает приготовить:
             </Typography>
-            <Box component="ul" sx={{ m: 0, pl: 2.5, color: 'rgba(255,255,255,0.9)' }}>
+            <Box component="ul" sx={{ m: 0, pl: 2.5, color: '#1A1A1A', lineHeight: 2 }}>
               {suggestedDishNames.map((name) => (
-                <li key={name}>{name}</li>
+                <li key={name}><Typography variant="body2">{name}</Typography></li>
               ))}
             </Box>
           </Box>
         )}
-        <Button variant="outlined" onClick={onBack} startIcon={<ArrowBack />} sx={{ mt: 1 }}>
+        <Button variant="contained" onClick={onBack} startIcon={<ArrowBack />}>
           Изменить ингредиенты
         </Button>
       </Box>
@@ -110,159 +142,231 @@ export default function SwipeDeck({ dishes, onDishSelect, onComplete, onBack }: 
   }
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', pb: 4 }}>
-      {/* Header */}
-      <Box sx={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Button variant="text" onClick={onBack} startIcon={<ArrowBack />} size="small">
-          Назад
-        </Button>
-        <Typography
-          variant="body2"
-          sx={{
-            color: remaining > 0 ? 'rgba(255,255,255,0.5)' : '#22C55E',
-            fontWeight: 600,
-            fontSize: '0.8rem',
-            letterSpacing: '0.05em',
-            textTransform: 'uppercase',
-          }}
-        >
-          {remaining > 0 ? `${remaining} блюд осталось` : 'Все просмотрены'}
-        </Typography>
-        <Button variant="text" onClick={handleReset} size="small" sx={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem' }}>
-          Сначала
-        </Button>
-      </Box>
-
-      {/* Card stack */}
-      <Box
-        sx={{
-          position: 'relative',
-          width: '100%',
-          maxWidth: 400,
-          height: 520,
-          mb: 4,
-        }}
-      >
-        {remaining === 0 ? (
-          <Box
-            sx={{
-              width: '100%',
-              height: '100%',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              bgcolor: 'rgba(255,255,255,0.03)',
-              borderRadius: 4,
-              border: '1px solid rgba(255,255,255,0.08)',
-            }}
+    <>
+      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        {/* Header */}
+        <Box sx={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Button
+            variant="text"
+            onClick={onBack}
+            startIcon={<ArrowBack />}
+            size="small"
+            sx={{ color: 'rgba(0,0,0,0.45)', fontWeight: 500 }}
           >
-            <Typography variant="h5" sx={{ color: 'rgba(255,255,255,0.5)', fontWeight: 700, mb: 3 }}>
-              Вы просмотрели все блюда!
-            </Typography>
-            <Button variant="contained" onClick={onComplete} size="large" sx={{ px: 4 }}>
-              Посмотреть результаты
-            </Button>
-          </Box>
-        ) : (
-          dishes.map((dish, index) => {
-            const isVisible = index >= currentIndex
-            if (!isVisible) return null
-            return (
+            Назад
+          </Button>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            {!isPremium && (
               <Box
-                key={dish.id}
-                data-testid="swipe-card"
+                onClick={() => setPaywallOpen(true)}
                 sx={{
-                  position: 'absolute',
-                  width: '100%',
-                  height: '100%',
+                  bgcolor: canSwipe() ? '#FFF3E0' : '#FFF1F0',
+                  borderRadius: 10,
+                  px: 1.5,
+                  py: 0.5,
+                  cursor: 'pointer',
                 }}
               >
-                <TinderCard
-                  ref={getCardRef(index)}
-                  onSwipe={(dir) => handleSwipe(dir, dish.id)}
-                  onCardLeftScreen={(title) => handleCardLeft(title, index - currentIndex - 1)}
-                  preventSwipe={['up', 'down']}
-                  swipeRequirementType="position"
-                  swipeThreshold={80}
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: canSwipe() ? 'rgba(0,0,0,0.45)' : '#FF4D4D',
+                    fontWeight: 600,
+                    fontSize: '0.75rem',
+                  }}
                 >
-                  <Box sx={{ width: '100%', height: 520 }}>
-                    <SwipeCard
-                      dish={dish}
-                      swipeDirection={swipeDirection[dish.id] ?? null}
-                    />
-                  </Box>
-                </TinderCard>
+                  {canSwipe() ? `Свайпов: ${swipesRemaining()}/${DAILY_SWIPE_LIMIT}` : 'Лимит исчерпан'}
+                </Typography>
               </Box>
-            )
-          })
+            )}
+            <Box
+              sx={{
+                bgcolor: remaining > 0 ? '#FFF3E0' : '#F0FDF4',
+                borderRadius: 10,
+                px: 1.5,
+                py: 0.5,
+              }}
+            >
+              <Typography
+                variant="caption"
+                sx={{
+                  color: remaining > 0 ? '#FF7A18' : '#22C55E',
+                  fontWeight: 700,
+                  fontSize: '0.78rem',
+                  letterSpacing: '0.04em',
+                  textTransform: 'uppercase',
+                }}
+              >
+                {remaining > 0 ? `${remaining} осталось` : 'Всё!'}
+              </Typography>
+            </Box>
+          </Box>
+          <Button
+            variant="text"
+            onClick={handleReset}
+            size="small"
+            sx={{ color: 'rgba(0,0,0,0.35)', fontSize: '0.8rem' }}
+          >
+            Сначала
+          </Button>
+        </Box>
+
+        {/* Card stack */}
+        <Box
+          sx={{
+            position: 'relative',
+            width: '100%',
+            maxWidth: 420,
+            height: 520,
+            mb: 3.5,
+          }}
+        >
+          {remaining === 0 ? (
+            <Box
+              sx={{
+                width: '100%',
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                bgcolor: '#FFFFFF',
+                borderRadius: '24px',
+                boxShadow: '0 10px 30px rgba(0,0,0,0.08)',
+                gap: 2,
+              }}
+            >
+              <Box sx={{ fontSize: '3rem' }}>🎉</Box>
+              <Typography variant="h5" sx={{ fontWeight: 700, color: '#1A1A1A', textAlign: 'center' }}>
+                Вы просмотрели все блюда!
+              </Typography>
+              <Button variant="contained" onClick={onComplete} size="large" sx={{ px: 4 }}>
+                Посмотреть результаты
+              </Button>
+            </Box>
+          ) : (
+            dishes.map((dish, index) => {
+              if (index < currentIndex) return null
+              const offset = index - currentIndex
+              return (
+                <Box
+                  key={dish.id}
+                  data-testid="swipe-card"
+                  sx={{
+                    position: 'absolute',
+                    width: '100%',
+                    height: '100%',
+                    zIndex: dishes.length - index,
+                    transform: offset === 0 ? 'none' : `translateY(${offset * 8}px) scale(${1 - offset * 0.04})`,
+                    transition: 'transform 0.3s ease',
+                    pointerEvents: offset === 0 ? 'auto' : 'none',
+                    transformOrigin: 'bottom center',
+                  }}
+                >
+                  <TinderCard
+                    ref={getCardRef(index)}
+                    onSwipe={(dir) => handleSwipe(dir, dish.id)}
+                    onCardLeftScreen={() => {
+                      if (index === dishes.length - 1) {
+                        dispatch(markSessionComplete())
+                        onComplete()
+                      }
+                    }}
+                    preventSwipe={['up', 'down']}
+                    swipeRequirementType="position"
+                    swipeThreshold={80}
+                  >
+                    <Box sx={{ width: '100%', height: 520 }}>
+                      <SwipeCard
+                        dish={dish}
+                        swipeDirection={swipeDirection[dish.id] ?? null}
+                      />
+                    </Box>
+                  </TinderCard>
+                </Box>
+              )
+            })
+          )}
+        </Box>
+
+        {/* Circular action buttons */}
+        {remaining > 0 && (
+          <Box sx={{ display: 'flex', gap: 3, alignItems: 'center', mb: 2 }}>
+            {/* Reject */}
+            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+              <IconButton
+                onClick={() => swipe('left')}
+                sx={{
+                  width: 64,
+                  height: 64,
+                  borderRadius: '50%',
+                  bgcolor: '#FFFFFF',
+                  border: '1.5px solid #FFE0DE',
+                  color: '#FF4D4D',
+                  boxShadow: '0 4px 20px rgba(255,77,77,0.2)',
+                  '&:hover': {
+                    bgcolor: '#FFF1F0',
+                    boxShadow: '0 6px 28px rgba(255,77,77,0.35)',
+                  },
+                }}
+              >
+                <Close sx={{ fontSize: 28 }} />
+              </IconButton>
+            </motion.div>
+
+            {/* Info */}
+            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+              <IconButton
+                onClick={handleInfoClick}
+                sx={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: '50%',
+                  bgcolor: '#FFFFFF',
+                  border: '1.5px solid #E0E0FF',
+                  color: '#6366F1',
+                  boxShadow: '0 4px 16px rgba(99,102,241,0.18)',
+                  '&:hover': {
+                    bgcolor: '#F0F0FF',
+                    boxShadow: '0 6px 22px rgba(99,102,241,0.3)',
+                  },
+                }}
+              >
+                <Info sx={{ fontSize: 22 }} />
+              </IconButton>
+            </motion.div>
+
+            {/* Like */}
+            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+              <IconButton
+                onClick={() => swipe('right')}
+                sx={{
+                  width: 64,
+                  height: 64,
+                  borderRadius: '50%',
+                  bgcolor: '#FFFFFF',
+                  border: '1.5px solid #BBF7D0',
+                  color: '#22C55E',
+                  boxShadow: '0 4px 20px rgba(34,197,94,0.2)',
+                  '&:hover': {
+                    bgcolor: '#F0FDF4',
+                    boxShadow: '0 6px 28px rgba(34,197,94,0.35)',
+                  },
+                }}
+              >
+                <Favorite sx={{ fontSize: 28 }} />
+              </IconButton>
+            </motion.div>
+          </Box>
         )}
       </Box>
 
-      {/* Controls */}
-      {remaining > 0 && (
-        <Box sx={{ display: 'flex', gap: 2.5, alignItems: 'center' }}>
-          <motion.div whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.92 }}>
-            <IconButton
-              onClick={() => swipe('left')}
-              sx={{
-                width: 68,
-                height: 68,
-                background: 'rgba(255,77,77,0.15)',
-                border: '2px solid rgba(255,77,77,0.4)',
-                color: '#FF4D4D',
-                boxShadow: '0 4px 20px rgba(255,77,77,0.2)',
-                '&:hover': {
-                  background: 'rgba(255,77,77,0.25)',
-                  boxShadow: '0 6px 28px rgba(255,77,77,0.4)',
-                },
-              }}
-            >
-              <Close sx={{ fontSize: 30 }} />
-            </IconButton>
-          </motion.div>
-
-          <motion.div whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.92 }}>
-            <IconButton
-              onClick={handleInfoClick}
-              sx={{
-                width: 52,
-                height: 52,
-                background: 'rgba(168,85,247,0.15)',
-                border: '2px solid rgba(168,85,247,0.4)',
-                color: '#A855F7',
-                boxShadow: '0 4px 16px rgba(168,85,247,0.2)',
-                '&:hover': {
-                  background: 'rgba(168,85,247,0.25)',
-                  boxShadow: '0 6px 24px rgba(168,85,247,0.4)',
-                },
-              }}
-            >
-              <Info sx={{ fontSize: 24 }} />
-            </IconButton>
-          </motion.div>
-
-          <motion.div whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.92 }}>
-            <IconButton
-              onClick={() => swipe('right')}
-              sx={{
-                width: 68,
-                height: 68,
-                background: 'rgba(34,197,94,0.15)',
-                border: '2px solid rgba(34,197,94,0.4)',
-                color: '#22C55E',
-                boxShadow: '0 4px 20px rgba(34,197,94,0.2)',
-                '&:hover': {
-                  background: 'rgba(34,197,94,0.25)',
-                  boxShadow: '0 6px 28px rgba(34,197,94,0.4)',
-                },
-              }}
-            >
-              <Favorite sx={{ fontSize: 30 }} />
-            </IconButton>
-          </motion.div>
-        </Box>
-      )}
-    </Box>
+      <PaywallModal
+        open={paywallOpen}
+        onClose={() => setPaywallOpen(false)}
+        onLoginRequired={openAuth}
+        reason="Свайп-колода: 10 карточек в день бесплатно. Premium — без ограничений."
+      />
+    </>
   )
 }

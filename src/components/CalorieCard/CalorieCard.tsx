@@ -15,9 +15,9 @@ interface MacroRow {
 
 export default function CalorieCard({ estimate }: CalorieCardProps) {
   const macros: MacroRow[] = [
-    { label: 'Белки', value: estimate.protein, unit: 'г', color: '#1976d2', max: 60 },
-    { label: 'Жиры', value: estimate.fat, unit: 'г', color: '#ed6c02', max: 80 },
-    { label: 'Углеводы', value: estimate.carbs, unit: 'г', color: '#2e7d32', max: 120 },
+    { label: 'Белки', value: estimate.protein, unit: 'г', color: '#6366F1', max: 60 },
+    { label: 'Жиры', value: estimate.fat, unit: 'г', color: '#FF7A18', max: 80 },
+    { label: 'Углеводы', value: estimate.carbs, unit: 'г', color: '#22C55E', max: 120 },
   ]
 
   return (

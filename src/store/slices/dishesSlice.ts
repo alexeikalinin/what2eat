@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import { Dish } from '../../types'
 import * as dishesService from '../../services/dishes'
-import { FindDishesOptions } from '../../services/dishes'
+import { FindDishesOptions, RandomizerFocus } from '../../services/dishes'
 import { suggestDishesByIngredients } from '../../services/openai'
 
 interface DishesState {
@@ -25,11 +25,10 @@ export const findDishes = createAsyncThunk(
   }
 )
 
-export const randomizeMeatDishes = createAsyncThunk(
-  'dishes/randomizeMeat',
-  async () => {
-    const allDishes = await dishesService.getAllDishes()
-    return dishesService.randomizeDishes(allDishes)
+export const randomizeDishesByFocus = createAsyncThunk(
+  'dishes/randomizeByFocus',
+  async (focus: RandomizerFocus) => {
+    return await dishesService.getDishesByFocus(focus)
   }
 )
 
@@ -64,15 +63,15 @@ const dishesSlice = createSlice({
         state.loading = false
         state.error = action.error.message || 'Failed to find dishes'
       })
-      .addCase(randomizeMeatDishes.pending, (state) => {
+      .addCase(randomizeDishesByFocus.pending, (state) => {
         state.loading = true
         state.error = null
       })
-      .addCase(randomizeMeatDishes.fulfilled, (state, action) => {
+      .addCase(randomizeDishesByFocus.fulfilled, (state, action) => {
         state.loading = false
         state.dishes = action.payload
       })
-      .addCase(randomizeMeatDishes.rejected, (state, action) => {
+      .addCase(randomizeDishesByFocus.rejected, (state, action) => {
         state.loading = false
         state.error = action.error.message || 'Failed to randomize dishes'
       })
@@ -87,4 +86,3 @@ const dishesSlice = createSlice({
 
 export const { clearDishes } = dishesSlice.actions
 export default dishesSlice.reducer
-

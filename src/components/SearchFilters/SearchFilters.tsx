@@ -1,13 +1,15 @@
+import { useState } from 'react'
 import {
   Box,
-  Paper,
   FormControlLabel,
   Switch,
   TextField,
   InputAdornment,
   Typography,
   Collapse,
+  Tooltip,
 } from '@mui/material'
+import { Lock } from '@mui/icons-material'
 import { useAppDispatch, useAppSelector } from '../../hooks/redux'
 import {
   toggleVegetarian,
@@ -16,77 +18,137 @@ import {
   toggleBudget,
   setBudgetLimit,
 } from '../../store/slices/filtersSlice'
+import { usePlan } from '../../hooks/usePlan'
+import PaywallModal from '../PaywallModal'
+import { useModalContext } from '../../contexts/ModalContext'
 
 export default function SearchFilters() {
   const dispatch = useAppDispatch()
   const { vegetarianOnly, veganOnly, allowMissing, budgetEnabled, budgetLimit } = useAppSelector(
     (state) => state.filters
   )
+  const { canUseAdvancedFilters } = usePlan()
+  const { openAuth } = useModalContext()
+  const [paywallOpen, setPaywallOpen] = useState(false)
+
+  const isAdvanced = canUseAdvancedFilters()
+
+  function lockedClick() {
+    if (!isAdvanced) setPaywallOpen(true)
+  }
 
   return (
-    <Paper
-      variant="outlined"
-      sx={{
-        p: 2,
-        mb: 2,
-        background: 'rgba(255,255,255,0.03)',
-        border: '1px solid rgba(255,255,255,0.08)',
-      }}
-    >
-      <Typography
-        variant="caption"
-        sx={{
-          color: 'rgba(255,255,255,0.35)',
-          fontWeight: 700,
-          textTransform: 'uppercase',
-          letterSpacing: '0.1em',
-          display: 'block',
-          mb: 1.5,
-        }}
-      >
-        Фильтры поиска
-      </Typography>
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-        <FormControlLabel
-          control={
-            <Switch checked={veganOnly} onChange={() => dispatch(toggleVegan())} size="small" />
-          }
-          label={<Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>Только веганское</Typography>}
-        />
-        <FormControlLabel
-          control={
-            <Switch checked={vegetarianOnly} onChange={() => dispatch(toggleVegetarian())} size="small" />
-          }
-          label={<Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>Только вегетарианское</Typography>}
-        />
-        <FormControlLabel
-          control={
-            <Switch checked={allowMissing} onChange={() => dispatch(toggleAllowMissing())} size="small" />
-          }
-          label={<Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>Немного докупить</Typography>}
-        />
-        <FormControlLabel
-          control={
-            <Switch checked={budgetEnabled} onChange={() => dispatch(toggleBudget())} size="small" />
-          }
-          label={<Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>Бюджет</Typography>}
-        />
-      </Box>
-      <Collapse in={budgetEnabled}>
-        <Box sx={{ mt: 1.5, maxWidth: 160 }}>
-          <TextField
-            size="small"
-            type="number"
-            label="Максимум"
-            value={budgetLimit ?? ''}
-            onChange={(e) => dispatch(setBudgetLimit(e.target.value ? Number(e.target.value) : null))}
-            InputProps={{
-              startAdornment: <InputAdornment position="start">$</InputAdornment>,
-            }}
-            inputProps={{ min: 1, step: 1 }}
+    <>
+      <Box sx={{ mt: 2 }}>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0, rowGap: 0 }}>
+          {/* Вегетарианское — FREE */}
+          <FormControlLabel
+            control={
+              <Switch
+                checked={vegetarianOnly}
+                onChange={() => dispatch(toggleVegetarian())}
+                size="small"
+              />
+            }
+            label={<Typography variant="body2" sx={{ color: 'rgba(0,0,0,0.65)', fontSize: '0.875rem' }}>Вегетарианское</Typography>}
+            sx={{ mr: 2, '& .MuiFormControlLabel-label': { ml: 0.5 } }}
           />
+
+          {/* Только веганское — PREMIUM */}
+          <Tooltip title={!isAdvanced ? 'Только Premium' : ''} placement="top">
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={veganOnly}
+                  onChange={() => isAdvanced ? dispatch(toggleVegan()) : lockedClick()}
+                  size="small"
+                  disabled={!isAdvanced}
+                />
+              }
+              label={
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <Typography variant="body2" sx={{ color: isAdvanced ? 'rgba(0,0,0,0.65)' : 'rgba(0,0,0,0.38)', fontSize: '0.875rem' }}>
+                    Только веганское
+                  </Typography>
+                  {!isAdvanced && <Lock sx={{ fontSize: 13, color: 'rgba(0,0,0,0.3)' }} />}
+                </Box>
+              }
+              onClick={!isAdvanced ? lockedClick : undefined}
+              sx={{ mr: 2, '& .MuiFormControlLabel-label': { ml: 0.5 }, cursor: !isAdvanced ? 'pointer' : 'default' }}
+            />
+          </Tooltip>
+
+          {/* Немного докупить — PREMIUM */}
+          <Tooltip title={!isAdvanced ? 'Только Premium' : ''} placement="top">
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={allowMissing}
+                  onChange={() => isAdvanced ? dispatch(toggleAllowMissing()) : lockedClick()}
+                  size="small"
+                  disabled={!isAdvanced}
+                />
+              }
+              label={
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <Typography variant="body2" sx={{ color: isAdvanced ? 'rgba(0,0,0,0.65)' : 'rgba(0,0,0,0.38)', fontSize: '0.875rem' }}>
+                    Немного докупить
+                  </Typography>
+                  {!isAdvanced && <Lock sx={{ fontSize: 13, color: 'rgba(0,0,0,0.3)' }} />}
+                </Box>
+              }
+              onClick={!isAdvanced ? lockedClick : undefined}
+              sx={{ mr: 2, '& .MuiFormControlLabel-label': { ml: 0.5 }, cursor: !isAdvanced ? 'pointer' : 'default' }}
+            />
+          </Tooltip>
+
+          {/* Бюджет — PREMIUM */}
+          <Tooltip title={!isAdvanced ? 'Только Premium' : ''} placement="top">
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={budgetEnabled}
+                  onChange={() => isAdvanced ? dispatch(toggleBudget()) : lockedClick()}
+                  size="small"
+                  disabled={!isAdvanced}
+                />
+              }
+              label={
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <Typography variant="body2" sx={{ color: isAdvanced ? 'rgba(0,0,0,0.65)' : 'rgba(0,0,0,0.38)', fontSize: '0.875rem' }}>
+                    Бюджет
+                  </Typography>
+                  {!isAdvanced && <Lock sx={{ fontSize: 13, color: 'rgba(0,0,0,0.3)' }} />}
+                </Box>
+              }
+              onClick={!isAdvanced ? lockedClick : undefined}
+              sx={{ '& .MuiFormControlLabel-label': { ml: 0.5 }, cursor: !isAdvanced ? 'pointer' : 'default' }}
+            />
+          </Tooltip>
         </Box>
-      </Collapse>
-    </Paper>
+        <Collapse in={budgetEnabled && isAdvanced}>
+          <Box sx={{ mt: 1, maxWidth: 140 }}>
+            <TextField
+              size="small"
+              type="number"
+              label="Максимум $"
+              value={budgetLimit ?? ''}
+              onChange={(e) => dispatch(setBudgetLimit(e.target.value ? Number(e.target.value) : null))}
+              InputProps={{
+                startAdornment: <InputAdornment position="start">$</InputAdornment>,
+              }}
+              inputProps={{ min: 1, step: 1 }}
+            />
+          </Box>
+        </Collapse>
+      </Box>
+
+      <PaywallModal
+        open={paywallOpen}
+        onClose={() => setPaywallOpen(false)}
+        onLoginRequired={openAuth}
+        reason="Расширенные фильтры (веган, бюджет, докупить) — только в Premium."
+      />
+    </>
   )
 }

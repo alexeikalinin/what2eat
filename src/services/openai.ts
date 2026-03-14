@@ -1,3 +1,5 @@
+import { supabase } from './supabase'
+
 export interface CalorieEstimate {
   calories: number
   protein: number
@@ -6,15 +8,41 @@ export interface CalorieEstimate {
   description: string
 }
 
-const API_URL = 'https://api.openai.com/v1/chat/completions'
+const DIRECT_API_URL = 'https://api.openai.com/v1/chat/completions'
 
-function getApiKey(): string {
-  const key = import.meta.env.VITE_OPENAI_API_KEY
-  if (!key)
+/** Возвращает заголовки для запроса к OpenAI — через прокси если есть Supabase, иначе напрямую */
+async function getOpenAIHeaders(): Promise<{ url: string; headers: Record<string, string>; useProxy: boolean }> {
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined
+  if (supabaseUrl) {
+    const { data } = await supabase.auth.getSession()
+    const token = data?.session?.access_token
+    if (token) {
+      return {
+        url: `${supabaseUrl}/functions/v1/openai-proxy`,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        useProxy: true,
+      }
+    }
+  }
+
+  // Фолбэк: прямой вызов (только если задан VITE_OPENAI_API_KEY)
+  const key = import.meta.env.VITE_OPENAI_API_KEY as string | undefined
+  if (!key) {
     throw new Error(
-      'Для распознавания по фото задайте переменную VITE_OPENAI_API_KEY в настройках проекта (Vercel: Settings → Environment Variables).'
+      'Для AI функций нужен аккаунт (войдите) или переменная VITE_OPENAI_API_KEY.'
     )
-  return key
+  }
+  return {
+    url: DIRECT_API_URL,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${key}`,
+    },
+    useProxy: false,
+  }
 }
 
 export async function detectIngredientsFromImage(
@@ -30,15 +58,15 @@ ${ingredientNames.join(', ')}
 Пример: ["Курица", "Морковь", "Молоко"]
 Если ничего не найдено, верни: []`
 
-  const response = await fetch(API_URL, {
+  const { url, headers } = await getOpenAIHeaders()
+
+  const response = await fetch(url, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${getApiKey()}`,
-    },
+    headers,
     body: JSON.stringify({
       model: 'gpt-4o',
       max_tokens: 300,
+      action: 'detect_ingredients',
       messages: [
         {
           role: 'user',
@@ -78,15 +106,15 @@ export async function estimateCaloriesFromImage(
 {"calories": <число>, "protein": <г>, "fat": <г>, "carbs": <г>, "description": "<краткое описание блюда на русском>"}
 Без пояснений, только JSON.`
 
-  const response = await fetch(API_URL, {
+  const { url, headers } = await getOpenAIHeaders()
+
+  const response = await fetch(url, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${getApiKey()}`,
-    },
+    headers,
     body: JSON.stringify({
       model: 'gpt-4o',
       max_tokens: 200,
+      action: 'estimate_calories',
       messages: [
         {
           role: 'user',
@@ -129,15 +157,14 @@ export async function suggestDishesByIngredients(ingredientNames: string[]): Pro
 Пример: ["Яичница с сыром", "Омлет с овощами"]`
 
   try {
-    const response = await fetch(API_URL, {
+    const { url, headers } = await getOpenAIHeaders()
+    const response = await fetch(url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${getApiKey()}`,
-      },
+      headers,
       body: JSON.stringify({
         model: 'gpt-4o-mini',
         max_tokens: 150,
+        action: 'suggest_dishes',
         messages: [{ role: 'user', content: prompt }],
       }),
     })

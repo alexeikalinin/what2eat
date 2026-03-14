@@ -6,6 +6,8 @@ import filtersReducer from './slices/filtersSlice'
 import swipeReducer from './slices/swipeSlice'
 import weeklyPlannerReducer from './slices/weeklyPlannerSlice'
 import photoReducer from './slices/photoSlice'
+import randomizerReducer from './slices/randomizerSlice'
+import userReducer from './slices/userSlice'
 
 export const store = configureStore({
   reducer: {
@@ -16,9 +18,16 @@ export const store = configureStore({
     swipe: swipeReducer,
     weeklyPlanner: weeklyPlannerReducer,
     photo: photoReducer,
+    randomizer: randomizerReducer,
+    user: userReducer,
   },
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware({
+      serializableCheck: {
+        ignoredPaths: ['user.user'],
+      },
+    }),
 })
 
 export type RootState = ReturnType<typeof store.getState>
 export type AppDispatch = typeof store.dispatch
-
