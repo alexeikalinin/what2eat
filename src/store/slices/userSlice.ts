@@ -55,9 +55,11 @@ export const signUpWithEmail = createAsyncThunk(
 export const loginWithGoogle = createAsyncThunk(
   'user/loginWithGoogle',
   async (_, { rejectWithValue }) => {
+    // redirectTo должен совпадать с одним из Redirect URLs в Supabase Dashboard → Auth → URL Configuration
+    const redirectTo = typeof window !== 'undefined' ? window.location.origin : ''
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: window.location.origin },
+      options: { redirectTo },
     })
     if (error) return rejectWithValue(translateAuthError(error.message))
   }

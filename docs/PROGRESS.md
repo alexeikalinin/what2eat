@@ -7,7 +7,7 @@
 ## Последнее обновление
 
 - **Дата:** 2026-03-14
-- **Среда:** Claude Code
+- **Среда:** Cursor
 
 ---
 
@@ -24,6 +24,7 @@
 - **Настройка OAuth:** Supabase Site URL + Redirect URLs, Google Cloud Console redirect URIs и JS origins
 - **Google provider в Supabase:** включён, добавлены Client ID и Client Secret
 - **GRANT доступа к таблицам:** выдан SELECT для anon/authenticated ролей
+- **Фикс OAuth/ingredients (Cursor):** ошибки `fetch Invalid value` и `Headers: Invalid value` — в `src/services/supabase.ts` URL и anon key приводятся к строкам (`String().trim()`), включён PKCE для OAuth (`flowType: 'pkce'`), явные auth-опции. OAuth redirectTo в userSlice с комментарием про Redirect URLs в Supabase.
 
 ---
 
@@ -41,9 +42,8 @@
 
 ## Известные проблемы / в процессе
 
-- `Error fetching ingredients: Object` на продакшне — причина пока не установлена. GRANT выдан, env vars правильные (`https://zf...`, KEY: true). Диагностический лог в коде (ветка main, коммит a18563d). **Следующий шаг:** посмотреть точный текст ошибки в консоли после деплоя.
-- `_getSessionFromURL → fetch Invalid value` — Google OAuth не завершается успехом. Google provider включён в Supabase. Возможно связано с ошибкой ingredients (Supabase не инициализируется корректно).
-- Debug логи в коде (временно): `src/services/supabase.ts` (убраны линтером), `src/services/ingredients.ts`, `src/services/dishes.ts` — **убрать после диагностики**.
+- **Исправлено в коде (нужен деплой):** `Error fetching ingredients` и `_getSessionFromURL → fetch Invalid value` / `Headers: Invalid value` — причина: в Headers/fetch передавались не-строки. В supabase.ts добавлены `String().trim()` для URL и ключа и auth с PKCE. После деплоя проверить вход через Google и загрузку ингредиентов.
+- В Supabase Dashboard → Authentication → URL Configuration в **Redirect URLs** должна быть строка `https://what2eat-ruby.vercel.app` (и при необходимости `https://what2eat-ruby.vercel.app/**`).
 
 ---
 
@@ -66,11 +66,10 @@
 
 ## Следующие шаги
 
-1. **Починить `Error fetching ingredients`** — посмотреть точный текст ошибки в консоли (диаг. лог уже в коде), устранить причину
-2. **Убрать debug логи** из `ingredients.ts` и `dishes.ts` после диагностики
-3. **Проверить Google OAuth** на продакшне — должно заработать после фикса Supabase
-4. **Перейти на Stripe Live** — заменить `pk_test_` на `pk_live_` ключи перед реальным запуском
-5. **Запустить E2E тесты** после стабилизации (`npx playwright test`)
+1. **Задеплоить** текущие изменения (supabase.ts + userSlice), проверить на продакшне Google OAuth и загрузку ингредиентов
+2. **Проверить Redirect URLs** в Supabase: Auth → URL Configuration — в списке должен быть `https://what2eat-ruby.vercel.app`
+3. **Перейти на Stripe Live** — заменить `pk_test_` на `pk_live_` ключи перед реальным запуском
+4. **Запустить E2E тесты** после стабилизации (`npx playwright test`)
 
 ---
 
@@ -92,6 +91,5 @@
 
 ## Открытые вопросы
 
-- Почему `Error fetching ingredients` несмотря на правильные env vars и GRANT? Нужен текст ошибки из консоли.
 - E2E тесты писались под sql.js — нужно обновить под Supabase-архитектуру.
 - `recipe_ingredients` для блюд 1-40 содержат hardcoded ID с ошибками — pre-existing bug, не трогать.

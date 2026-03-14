@@ -291,7 +291,7 @@ export default function SwipeDeck({ dishes, onDishSelect, onComplete, onBack }: 
 
         {/* Circular action buttons */}
         {remaining > 0 && (
-          <Box sx={{ display: 'flex', gap: 3, alignItems: 'center', mb: 2 }}>
+          <Box sx={{ display: 'flex', gap: 3, alignItems: 'center', mb: 2, position: 'relative', zIndex: 1000 }}>
             {/* Reject */}
             <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
               <IconButton

@@ -1,17 +1,48 @@
 import { createClient } from '@supabase/supabase-js'
 import type { User } from '@supabase/supabase-js'
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL ?? ''
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY ?? ''
+// Жёстко приводим к строкам — иначе в части окружений (fetch/Headers) передача
+// не-строки даёт "Failed to execute 'set' on 'Headers': Invalid value"
+const SUPABASE_URL = String(import.meta.env.VITE_SUPABASE_URL ?? '').trim()
+const SUPABASE_ANON_KEY = String(import.meta.env.VITE_SUPABASE_ANON_KEY ?? '').trim()
 
-// DEBUG: убрать после диагностики
-console.log('[Supabase] URL first chars:', JSON.stringify(SUPABASE_URL.substring(0, 10)))
-console.log('[Supabase] KEY set:', !!SUPABASE_ANON_KEY)
+const supabaseUrl = SUPABASE_URL || 'https://placeholder.supabase.co'
+const supabaseAnonKey = SUPABASE_ANON_KEY || 'placeholder'
 
-export const supabase = createClient(
-  SUPABASE_URL || 'https://placeholder.supabase.co',
-  SUPABASE_ANON_KEY || 'placeholder'
-)
+/** Обход "fetch/Headers: Invalid value": приводим URL и все заголовки к строкам перед вызовом fetch. */
+function sanitizedFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+  const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+  const safeInput = typeof url === 'string' && url ? url : String(url ?? '')
+  if (!init?.headers) return fetch(safeInput, init)
+  const headers = new Headers()
+  const raw = init.headers
+  if (raw instanceof Headers) {
+    raw.forEach((value, key) => {
+      headers.set(key, value != null ? String(value) : '')
+    })
+  } else if (Array.isArray(raw)) {
+    for (const [key, value] of raw) {
+      headers.set(key, value != null ? String(value) : '')
+    }
+  } else {
+    for (const key of Object.keys(raw)) {
+      const value = (raw as Record<string, string>)[key]
+      headers.set(key, value != null ? String(value) : '')
+    }
+  }
+  return fetch(safeInput, { ...init, headers })
+}
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  global: { fetch: sanitizedFetch },
+  auth: {
+    flowType: 'pkce',
+    detectSessionInUrl: true,
+    persistSession: true,
+    autoRefreshToken: true,
+    storageKey: 'what2eat-auth',
+  },
+})
 
 /** Возвращает true если Supabase реально подключён */
 export function isSupabaseConfigured(): boolean {
