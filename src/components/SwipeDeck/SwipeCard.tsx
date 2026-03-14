@@ -1,4 +1,5 @@
-import { Box, Typography, Chip } from '@mui/material'
+import { useState } from 'react'
+import { Box, Typography, Chip, Skeleton } from '@mui/material'
 import { AccessTime, AttachMoney, ShoppingCart } from '@mui/icons-material'
 import { Dish } from '../../types'
 import { DIFFICULTY_LABELS, DIFFICULTY_COLORS } from '../../utils/constants'
@@ -12,6 +13,7 @@ interface SwipeCardProps {
 export default function SwipeCard({ dish, swipeDirection }: SwipeCardProps) {
   const imageUrl = getDishImageUrl(dish.name, dish.image_url)
   const fallbackUrl = getDishImageUrl(dish.name, null)
+  const [imgLoaded, setImgLoaded] = useState(false)
 
   return (
     <Box
@@ -27,13 +29,31 @@ export default function SwipeCard({ dish, swipeDirection }: SwipeCardProps) {
         '&:active': { cursor: 'grabbing' },
       }}
     >
+      {/* Skeleton пока изображение грузится */}
+      {!imgLoaded && (
+        <Skeleton
+          variant="rectangular"
+          animation="wave"
+          sx={{
+            position: 'absolute',
+            inset: 0,
+            width: '100%',
+            height: '100%',
+            borderRadius: 0,
+            bgcolor: 'rgba(0,0,0,0.06)',
+          }}
+        />
+      )}
+
       {/* Full-bleed food photo */}
       <Box
         component="img"
         src={imageUrl}
         alt={dish.name}
+        onLoad={() => setImgLoaded(true)}
         onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
           e.currentTarget.src = fallbackUrl
+          setImgLoaded(true)
         }}
         sx={{
           position: 'absolute',
@@ -42,6 +62,8 @@ export default function SwipeCard({ dish, swipeDirection }: SwipeCardProps) {
           height: '100%',
           objectFit: 'cover',
           display: 'block',
+          opacity: imgLoaded ? 1 : 0,
+          transition: 'opacity 0.4s ease',
         }}
       />
 
@@ -168,45 +190,47 @@ export default function SwipeCard({ dish, swipeDirection }: SwipeCardProps) {
         )}
       </Box>
 
-      {/* COOK overlay — swipe right */}
+      {/* COOK overlay — свайп вправо (оформление как в TashaD16) */}
       {swipeDirection === 'right' && (
         <Box
           sx={{
             position: 'absolute',
-            top: 32,
-            left: 20,
-            border: '3.5px solid #22C55E',
-            borderRadius: 2,
-            px: 2,
-            py: 0.75,
-            transform: 'rotate(-12deg)',
-            boxShadow: '0 0 24px rgba(34,197,94,0.5)',
-            background: 'rgba(34,197,94,0.12)',
+            top: 28,
+            left: 24,
+            border: '3px solid rgba(34,197,94,0.9)',
+            borderRadius: 3,
+            px: 2.5,
+            py: 1,
+            transform: 'rotate(-10deg)',
+            boxShadow: '0 4px 20px rgba(34,197,94,0.4), 0 0 40px rgba(34,197,94,0.2)',
+            background: 'rgba(34,197,94,0.18)',
+            backdropFilter: 'blur(6px)',
           }}
         >
-          <Typography sx={{ color: '#22C55E', fontWeight: 900, fontSize: 26, letterSpacing: 2, lineHeight: 1 }}>
+          <Typography sx={{ color: '#22C55E', fontWeight: 900, fontSize: 28, letterSpacing: 3, lineHeight: 1, textShadow: '0 1px 2px rgba(0,0,0,0.2)' }}>
             COOK ❤️
           </Typography>
         </Box>
       )}
 
-      {/* SKIP overlay — swipe left */}
+      {/* SKIP overlay — свайп влево */}
       {swipeDirection === 'left' && (
         <Box
           sx={{
             position: 'absolute',
-            top: 32,
-            right: 20,
-            border: '3.5px solid #FF4D4D',
-            borderRadius: 2,
-            px: 2,
-            py: 0.75,
-            transform: 'rotate(12deg)',
-            boxShadow: '0 0 24px rgba(255,77,77,0.5)',
-            background: 'rgba(255,77,77,0.12)',
+            top: 28,
+            right: 24,
+            border: '3px solid rgba(255,77,77,0.9)',
+            borderRadius: 3,
+            px: 2.5,
+            py: 1,
+            transform: 'rotate(10deg)',
+            boxShadow: '0 4px 20px rgba(255,77,77,0.4), 0 0 40px rgba(255,77,77,0.2)',
+            background: 'rgba(255,77,77,0.18)',
+            backdropFilter: 'blur(6px)',
           }}
         >
-          <Typography sx={{ color: '#FF4D4D', fontWeight: 900, fontSize: 26, letterSpacing: 2, lineHeight: 1 }}>
+          <Typography sx={{ color: '#FF4D4D', fontWeight: 900, fontSize: 28, letterSpacing: 3, lineHeight: 1, textShadow: '0 1px 2px rgba(0,0,0,0.2)' }}>
             SKIP ✖
           </Typography>
         </Box>

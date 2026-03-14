@@ -1,6 +1,15 @@
 import { useRef, useState, useCallback, useEffect } from 'react'
 import TinderCard from 'react-tinder-card'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
+
+const btnContainerVariants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.09, delayChildren: 0.5 } },
+}
+const btnItemVariant = {
+  hidden: { opacity: 0, y: 24, scale: 0.6 },
+  visible: { opacity: 1, y: 0, scale: 1, transition: { type: 'spring' as const, stiffness: 380, damping: 16 } },
+}
 
 interface CardAPI {
   swipe(dir?: string): Promise<void>
@@ -181,23 +190,24 @@ export default function SwipeDeck({ dishes, onDishSelect, onComplete, onBack }: 
             )}
             <Box
               sx={{
-                bgcolor: remaining > 0 ? '#FFF3E0' : '#F0FDF4',
+                bgcolor: remaining > 0 ? 'rgba(255,122,24,0.08)' : 'rgba(34,197,94,0.12)',
                 borderRadius: 10,
                 px: 1.5,
                 py: 0.5,
+                border: `1px solid ${remaining > 0 ? 'rgba(255,122,24,0.2)' : 'rgba(34,197,94,0.25)'}`,
               }}
             >
               <Typography
                 variant="caption"
                 sx={{
-                  color: remaining > 0 ? '#FF7A18' : '#22C55E',
-                  fontWeight: 700,
-                  fontSize: '0.78rem',
-                  letterSpacing: '0.04em',
+                  color: remaining > 0 ? 'text.secondary' : '#22C55E',
+                  fontWeight: 600,
+                  fontSize: '0.8rem',
+                  letterSpacing: '0.05em',
                   textTransform: 'uppercase',
                 }}
               >
-                {remaining > 0 ? `${remaining} осталось` : 'Всё!'}
+                {remaining > 0 ? `Осталось: ${remaining}` : 'Всё просмотрено'}
               </Typography>
             </Box>
           </Box>
@@ -211,7 +221,7 @@ export default function SwipeDeck({ dishes, onDishSelect, onComplete, onBack }: 
           </Button>
         </Box>
 
-        {/* Card stack */}
+        {/* Card stack с подсветкой как в TashaD16 */}
         <Box
           sx={{
             position: 'relative',
@@ -219,6 +229,27 @@ export default function SwipeDeck({ dishes, onDishSelect, onComplete, onBack }: 
             maxWidth: 420,
             height: 520,
             mb: 3.5,
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              inset: -24,
+              borderRadius: 36,
+              background: 'radial-gradient(ellipse 85% 65% at 50% 50%, rgba(34,197,94,0.08) 0%, transparent 65%)',
+              pointerEvents: 'none',
+            },
+            '&::after': {
+              content: '""',
+              position: 'absolute',
+              inset: -12,
+              borderRadius: 28,
+              background: 'radial-gradient(ellipse 70% 55% at 50% 50%, rgba(34,197,94,0.04) 0%, transparent 70%)',
+              pointerEvents: 'none',
+              animation: 'swipeGlowPulse 4s ease-in-out infinite',
+            },
+            '@keyframes swipeGlowPulse': {
+              '0%, 100%': { opacity: 1 },
+              '50%': { opacity: 0.6 },
+            },
           }}
         >
           {remaining === 0 ? (
@@ -245,25 +276,29 @@ export default function SwipeDeck({ dishes, onDishSelect, onComplete, onBack }: 
               </Button>
             </Box>
           ) : (
-            dishes.map((dish, index) => {
-              if (index < currentIndex) return null
-              const offset = index - currentIndex
-              return (
-                <Box
-                  key={dish.id}
-                  data-testid="swipe-card"
-                  sx={{
-                    position: 'absolute',
-                    width: '100%',
-                    height: '100%',
-                    zIndex: dishes.length - index,
-                    transform: offset === 0 ? 'none' : `translateY(${offset * 8}px) scale(${1 - offset * 0.04})`,
-                    transition: 'transform 0.3s ease',
-                    pointerEvents: offset === 0 ? 'auto' : 'none',
-                    transformOrigin: 'bottom center',
-                  }}
-                >
-                  <TinderCard
+            <AnimatePresence initial={false}>
+              {dishes.map((dish, index) => {
+                if (index < currentIndex) return null
+                const offset = index - currentIndex
+                return (
+                  <motion.div
+                    key={dish.id}
+                    initial={{ opacity: 0, scale: 0.92 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ type: 'spring', stiffness: 320, damping: 24 }}
+                    style={{
+                      position: 'absolute',
+                      width: '100%',
+                      height: '100%',
+                      zIndex: dishes.length - index,
+                      transform: offset === 0 ? 'none' : `translateY(${offset * 8}px) scale(${1 - offset * 0.04})`,
+                      transition: 'transform 0.3s ease',
+                      pointerEvents: offset === 0 ? 'auto' : 'none',
+                      transformOrigin: 'bottom center',
+                    }}
+                    data-testid="swipe-card"
+                  >
+                    <TinderCard
                     ref={getCardRef(index)}
                     onSwipe={(dir) => handleSwipe(dir, dish.id)}
                     onCardLeftScreen={() => {
@@ -283,30 +318,37 @@ export default function SwipeDeck({ dishes, onDishSelect, onComplete, onBack }: 
                       />
                     </Box>
                   </TinderCard>
-                </Box>
+                </motion.div>
               )
-            })
+            })}
+            </AnimatePresence>
           )}
         </Box>
 
-        {/* Circular action buttons */}
+        {/* Кнопки с анимацией появления (stagger + spring) как в TashaD16 */}
         {remaining > 0 && (
-          <Box sx={{ display: 'flex', gap: 3, alignItems: 'center', mb: 2, position: 'relative', zIndex: 1000 }}>
+          <motion.div
+            variants={btnContainerVariants}
+            initial="hidden"
+            animate="visible"
+            style={{ display: 'flex', gap: 24, alignItems: 'center', marginBottom: 16, position: 'relative', zIndex: 1000 }}
+          >
             {/* Reject */}
-            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+            <motion.div variants={btnItemVariant} whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.92 }}>
               <IconButton
                 onClick={() => swipe('left')}
                 sx={{
-                  width: 64,
-                  height: 64,
+                  width: 68,
+                  height: 68,
                   borderRadius: '50%',
-                  bgcolor: '#FFFFFF',
-                  border: '1.5px solid #FFE0DE',
+                  background: 'rgba(255,77,77,0.28)',
+                  border: '2px solid rgba(255,77,77,0.75)',
                   color: '#FF4D4D',
-                  boxShadow: '0 4px 20px rgba(255,77,77,0.2)',
+                  boxShadow: '0 4px 16px rgba(255,77,77,0.35), 0 0 40px rgba(255,77,77,0.22)',
+                  transition: 'box-shadow 0.25s ease, background 0.25s ease',
                   '&:hover': {
-                    bgcolor: '#FFF1F0',
-                    boxShadow: '0 6px 28px rgba(255,77,77,0.35)',
+                    background: 'rgba(255,77,77,0.40)',
+                    boxShadow: '0 4px 20px rgba(255,77,77,0.50), 0 0 60px rgba(255,77,77,0.30)',
                   },
                 }}
               >
@@ -315,20 +357,20 @@ export default function SwipeDeck({ dishes, onDishSelect, onComplete, onBack }: 
             </motion.div>
 
             {/* Info */}
-            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+            <motion.div variants={btnItemVariant} whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.92 }}>
               <IconButton
                 onClick={handleInfoClick}
                 sx={{
                   width: 48,
                   height: 48,
                   borderRadius: '50%',
-                  bgcolor: '#FFFFFF',
-                  border: '1.5px solid #E0E0FF',
+                  bgcolor: 'rgba(255,255,255,0.9)',
+                  border: '2px solid rgba(99,102,241,0.4)',
                   color: '#6366F1',
-                  boxShadow: '0 4px 16px rgba(99,102,241,0.18)',
+                  boxShadow: '0 4px 16px rgba(99,102,241,0.2), 0 0 24px rgba(99,102,241,0.12)',
+                  transition: 'box-shadow 0.25s ease',
                   '&:hover': {
-                    bgcolor: '#F0F0FF',
-                    boxShadow: '0 6px 22px rgba(99,102,241,0.3)',
+                    boxShadow: '0 4px 20px rgba(99,102,241,0.35), 0 0 36px rgba(99,102,241,0.18)',
                   },
                 }}
               >
@@ -337,27 +379,28 @@ export default function SwipeDeck({ dishes, onDishSelect, onComplete, onBack }: 
             </motion.div>
 
             {/* Like */}
-            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+            <motion.div variants={btnItemVariant} whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.92 }}>
               <IconButton
                 onClick={() => swipe('right')}
                 sx={{
-                  width: 64,
-                  height: 64,
+                  width: 68,
+                  height: 68,
                   borderRadius: '50%',
-                  bgcolor: '#FFFFFF',
-                  border: '1.5px solid #BBF7D0',
+                  background: 'rgba(34,197,94,0.28)',
+                  border: '2px solid rgba(34,197,94,0.75)',
                   color: '#22C55E',
-                  boxShadow: '0 4px 20px rgba(34,197,94,0.2)',
+                  boxShadow: '0 4px 16px rgba(34,197,94,0.35), 0 0 40px rgba(34,197,94,0.22)',
+                  transition: 'box-shadow 0.25s ease, background 0.25s ease',
                   '&:hover': {
-                    bgcolor: '#F0FDF4',
-                    boxShadow: '0 6px 28px rgba(34,197,94,0.35)',
+                    background: 'rgba(34,197,94,0.40)',
+                    boxShadow: '0 4px 20px rgba(34,197,94,0.50), 0 0 60px rgba(34,197,94,0.30)',
                   },
                 }}
               >
                 <Favorite sx={{ fontSize: 28 }} />
               </IconButton>
             </motion.div>
-          </Box>
+          </motion.div>
         )}
       </Box>
 

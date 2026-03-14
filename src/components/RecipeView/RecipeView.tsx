@@ -7,6 +7,8 @@ import {
   CircularProgress,
   Alert,
   Grid,
+  List,
+  ListItem,
 } from '@mui/material'
 import { ArrowBack, AccessTime, People, OpenInNew } from '@mui/icons-material'
 import { motion } from 'framer-motion'
@@ -159,120 +161,143 @@ export default function RecipeView({ onBack }: RecipeViewProps) {
           </Box>
         )}
 
-        {/* Info row */}
-        <Box sx={{ display: 'flex', gap: 1, mb: 3, flexWrap: 'wrap', alignItems: 'center' }}>
-          <Chip
-            icon={<AccessTime sx={{ fontSize: '15px !important' }} />}
-            label={`${currentRecipe.cooking_time} мин`}
-            sx={{ bgcolor: '#FFF3E0', color: '#FF7A18', border: 'none', fontWeight: 600 }}
-          />
-          <Chip
-            icon={<People sx={{ fontSize: '15px !important' }} />}
-            label={`${currentRecipe.servings} порц.`}
-            sx={{ bgcolor: '#F0F4FF', color: '#6366F1', border: 'none', fontWeight: 600 }}
-          />
-          <Chip
-            label={DIFFICULTY_LABELS[currentRecipe.difficulty]}
-            sx={{ bgcolor: getDifficultyColor(currentRecipe.difficulty), color: 'white', fontWeight: 700 }}
-          />
-          {currentRecipe.source_url && (
-            <Chip
-              icon={<OpenInNew sx={{ fontSize: '14px !important' }} />}
-              label="Источник"
-              component="a"
-              href={currentRecipe.source_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              clickable
-              variant="outlined"
-              sx={{ color: 'rgba(0,0,0,0.55)', borderColor: '#E0E0E0', fontWeight: 500, fontSize: '0.78rem' }}
-            />
-          )}
-        </Box>
-
+        {/* Две колонки как в TashaD16: ингредиенты (30%) + шаги (70%), палитра в стиле проекта */}
         <Grid container spacing={2.5}>
-          {/* Ingredients */}
+          {/* Левый блок: ингредиенты */}
           <Grid item xs={12} md={4}>
-            <Paper elevation={1} sx={{ p: 2.5, borderRadius: 3 }}>
-              <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, color: '#1A1A1A' }}>
+            <Paper
+              elevation={0}
+              sx={{
+                p: 2.5,
+                borderRadius: 3,
+                bgcolor: 'rgba(255,243,224,0.97)',
+                backdropFilter: 'blur(20px)',
+                border: '1.5px solid rgba(255,122,24,0.28)',
+                boxShadow: '0 4px 24px rgba(255,122,24,0.12)',
+              }}
+            >
+              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center', mb: 2 }}>
+                <Chip
+                  icon={<AccessTime sx={{ fontSize: '15px !important' }} />}
+                  label={`${currentRecipe.cooking_time} мин`}
+                  size="small"
+                  sx={{ bgcolor: 'rgba(255,122,24,0.15)', color: '#E86A08', border: '1px solid rgba(255,122,24,0.30)', fontWeight: 600 }}
+                />
+                <Chip
+                  icon={<People sx={{ fontSize: '15px !important' }} />}
+                  label={`${currentRecipe.servings} порц.`}
+                  size="small"
+                  sx={{ bgcolor: 'rgba(255,122,24,0.15)', color: '#E86A08', border: '1px solid rgba(255,122,24,0.30)', fontWeight: 600 }}
+                />
+                <Chip
+                  label={DIFFICULTY_LABELS[currentRecipe.difficulty]}
+                  size="small"
+                  sx={{ bgcolor: getDifficultyColor(currentRecipe.difficulty), color: 'white', fontWeight: 700 }}
+                />
+                {currentRecipe.source_url && (
+                  <Chip
+                    icon={<OpenInNew sx={{ fontSize: '14px !important' }} />}
+                    label="Источник"
+                    component="a"
+                    href={currentRecipe.source_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    clickable
+                    size="small"
+                    sx={{ color: 'rgba(0,0,0,0.55)', border: '1px solid rgba(255,122,24,0.25)', fontWeight: 500, fontSize: '0.78rem' }}
+                  />
+                )}
+              </Box>
+              <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5, color: '#1A1A1A' }}>
                 🧂 Ингредиенты
               </Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+              <List dense disablePadding>
                 {currentRecipe.ingredients.map((ing, index) => (
-                  <Box
+                  <ListItem
                     key={index}
+                    disablePadding
                     sx={{
+                      py: 0.75,
+                      borderBottom: index < currentRecipe.ingredients.length - 1 ? '1px solid rgba(255,122,24,0.12)' : 'none',
                       display: 'flex',
                       justifyContent: 'space-between',
                       alignItems: 'center',
-                      py: 1,
-                      borderBottom: index < currentRecipe.ingredients.length - 1 ? '1px solid #F5F5F5' : 'none',
                     }}
                   >
                     <Typography variant="body2" sx={{ fontWeight: 500, color: '#1A1A1A' }}>
                       {ing.ingredient_name}
                     </Typography>
-                    <Typography variant="caption" sx={{ color: 'rgba(0,0,0,0.45)', fontWeight: 500 }}>
+                    <Typography variant="caption" sx={{ color: 'rgba(0,0,0,0.5)', fontWeight: 500 }}>
                       {ing.quantity} {ing.unit}
                     </Typography>
-                  </Box>
+                  </ListItem>
                 ))}
-              </Box>
+              </List>
             </Paper>
           </Grid>
 
-          {/* Steps */}
+          {/* Правый блок: приготовление */}
           <Grid item xs={12} md={8}>
-            <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, color: '#1A1A1A' }}>
-              👨‍🍳 Приготовление
-            </Typography>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {currentRecipe.instructions.map((step, index) => (
-                <motion.div
-                  key={`${selectedVariant}-${index}`}
-                  initial={{ opacity: 0, x: -12 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.05, duration: 0.28 }}
-                >
-                  <Paper
-                    elevation={0}
-                    sx={{
-                      p: 2,
-                      borderRadius: 3,
-                      border: '1px solid #F0F0F0',
-                      bgcolor: '#FFFFFF',
-                      display: 'flex',
-                      gap: 2,
-                      alignItems: 'flex-start',
-                    }}
+            <Paper
+              elevation={0}
+              sx={{
+                p: 2.5,
+                borderRadius: 3,
+                bgcolor: 'rgba(255,248,240,0.97)',
+                backdropFilter: 'blur(20px)',
+                border: '1.5px solid rgba(255,122,24,0.20)',
+                boxShadow: '0 4px 24px rgba(255,122,24,0.08)',
+              }}
+            >
+              <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2, color: '#1A1A1A' }}>
+                👨‍🍳 Приготовление
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                {currentRecipe.instructions.map((step, index) => (
+                  <motion.div
+                    key={`${selectedVariant}-${index}`}
+                    initial={{ opacity: 0, x: -12 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.05, duration: 0.28 }}
                   >
                     <Box
                       sx={{
-                        minWidth: 32,
-                        height: 32,
-                        borderRadius: '50%',
-                        background: 'linear-gradient(135deg, #FF7A18 0%, #FFB347 100%)',
                         display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                        boxShadow: '0 2px 8px rgba(255,122,24,0.3)',
+                        gap: 2,
+                        alignItems: 'flex-start',
+                        pb: index < currentRecipe.instructions.length - 1 ? 2 : 0,
+                        mb: index < currentRecipe.instructions.length - 1 ? 2 : 0,
+                        borderBottom: index < currentRecipe.instructions.length - 1 ? '1px solid rgba(255,122,24,0.12)' : 'none',
                       }}
                     >
-                      <Typography sx={{ color: 'white', fontWeight: 800, fontSize: '0.8rem' }}>
-                        {step.step}
+                      <Box
+                        sx={{
+                          minWidth: 32,
+                          height: 32,
+                          borderRadius: '50%',
+                          background: 'linear-gradient(135deg, #FF7A18 0%, #FFB347 100%)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0,
+                          boxShadow: '0 2px 10px rgba(255,122,24,0.35)',
+                        }}
+                      >
+                        <Typography sx={{ color: 'white', fontWeight: 800, fontSize: '0.8rem' }}>
+                          {step.step}
+                        </Typography>
+                      </Box>
+                      <Typography
+                        variant="body2"
+                        sx={{ color: '#3A3A3A', lineHeight: 1.65, pt: 0.5, fontSize: '0.9rem' }}
+                      >
+                        {step.description}
                       </Typography>
                     </Box>
-                    <Typography
-                      variant="body2"
-                      sx={{ color: '#3A3A3A', lineHeight: 1.65, pt: 0.5, fontSize: '0.9rem' }}
-                    >
-                      {step.description}
-                    </Typography>
-                  </Paper>
-                </motion.div>
-              ))}
-            </Box>
+                  </motion.div>
+                ))}
+              </Box>
+            </Paper>
           </Grid>
         </Grid>
       </Box>

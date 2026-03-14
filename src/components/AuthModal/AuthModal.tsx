@@ -138,7 +138,7 @@ export default function AuthModal({ open, onClose }: AuthModalProps) {
           onClick={handleGoogle}
           disabled={googleLoading || loading || !supabaseReady}
           sx={{
-            mb: 2.5,
+            mb: 0.5,
             borderRadius: 3,
             borderColor: '#E0E0E0',
             color: '#1A1A1A',
@@ -148,6 +148,9 @@ export default function AuthModal({ open, onClose }: AuthModalProps) {
         >
           {googleLoading ? 'Перенаправляем…' : 'Войти через Google'}
         </Button>
+        <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary', textAlign: 'center', px: 1, mb: 2 }}>
+          Не видите свои аккаунты? Откройте сайт в браузере (Safari или Chrome), а не во встроенном окне мессенджера.
+        </Typography>
 
         <Divider sx={{ mb: 2.5 }}>
           <Typography variant="caption" sx={{ color: 'rgba(0,0,0,0.4)' }}>или по email</Typography>

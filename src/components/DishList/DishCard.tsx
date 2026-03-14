@@ -35,14 +35,24 @@ export default function DishCard({ dish, onSelect }: DishCardProps) {
       whileTap={{ scale: 0.98 }}
       style={{ height: '100%' }}
     >
-      <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <Card
+        sx={{
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          borderRadius: 3,
+          border: '1px solid rgba(255,122,24,0.18)',
+          boxShadow: '0 4px 20px rgba(255,122,24,0.08), 0 2px 8px rgba(0,0,0,0.04)',
+        }}
+      >
         {/* Image with heart */}
         <Box sx={{ position: 'relative' }}>
           <CardMedia
             component="img"
             image={imageUrl}
             alt={dish.name}
-            sx={{ height: 190, objectFit: 'cover' }}
+            sx={{ height: 200, objectFit: 'cover' }}
           />
           {/* Heart icon top-right */}
           <motion.div
@@ -88,19 +98,21 @@ export default function DishCard({ dish, onSelect }: DishCardProps) {
             </Typography>
           )}
 
-          {/* Meta chips */}
+          {/* Meta chips — оформление как в TashaD16, палитра проекта */}
           <Box sx={{ display: 'flex', gap: 0.75, mb: 1.5, flexWrap: 'wrap' }}>
             <Chip
               icon={<AccessTime sx={{ fontSize: '13px !important' }} />}
               label={`${dish.cooking_time} мин`}
               size="small"
-              sx={{ bgcolor: '#FFF3E0', color: '#FF7A18', border: 'none', fontWeight: 600, fontSize: '0.77rem' }}
+              variant="outlined"
+              sx={{ bgcolor: 'rgba(255,243,224,0.6)', color: '#E86A08', border: '1px solid rgba(255,122,24,0.28)', fontWeight: 600, fontSize: '0.77rem' }}
             />
             <Chip
               icon={<People sx={{ fontSize: '13px !important' }} />}
               label={`${dish.servings} порц.`}
               size="small"
-              sx={{ bgcolor: '#F5F5F5', color: 'rgba(0,0,0,0.55)', border: 'none', fontSize: '0.77rem' }}
+              variant="outlined"
+              sx={{ bgcolor: 'rgba(255,255,255,0.8)', color: 'rgba(0,0,0,0.55)', border: '1px solid rgba(255,122,24,0.18)', fontSize: '0.77rem' }}
             />
             <Chip
               label={DIFFICULTY_LABELS[dish.difficulty]}
@@ -109,10 +121,10 @@ export default function DishCard({ dish, onSelect }: DishCardProps) {
             />
             {dish.estimated_cost != null && (
               <Chip
-                icon={<AttachMoney sx={{ fontSize: '13px !important', color: '#22C55E !important' }} />}
+                icon={<AttachMoney sx={{ fontSize: '13px !important', color: '#15803d !important' }} />}
                 label={`$${dish.estimated_cost.toFixed(0)}`}
                 size="small"
-                sx={{ bgcolor: '#F0FDF4', color: '#22C55E', border: 'none', fontWeight: 600, fontSize: '0.77rem' }}
+                sx={{ bgcolor: 'rgba(34,197,94,0.12)', color: '#15803d', border: '1px solid rgba(34,197,94,0.28)', fontWeight: 600, fontSize: '0.77rem' }}
               />
             )}
             {dish.is_vegan && (
@@ -148,7 +160,15 @@ export default function DishCard({ dish, onSelect }: DishCardProps) {
             variant="contained"
             fullWidth
             onClick={() => onSelect(dish.id)}
-            sx={{ mt: 'auto', py: 1, fontSize: '0.875rem' }}
+            sx={{
+              mt: 'auto',
+              py: 1.15,
+              fontSize: '0.875rem',
+              fontWeight: 700,
+              borderRadius: 2,
+              boxShadow: '0 4px 14px rgba(255,122,24,0.35)',
+              '&:hover': { boxShadow: '0 6px 20px rgba(255,122,24,0.45)' },
+            }}
           >
             Посмотреть рецепт
           </Button>
