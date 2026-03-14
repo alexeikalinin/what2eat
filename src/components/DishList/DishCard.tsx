@@ -8,7 +8,7 @@ import {
   Button,
   IconButton,
 } from '@mui/material'
-import { AccessTime, People, AttachMoney, ShoppingCart, FavoriteBorder, Favorite } from '@mui/icons-material'
+import { AccessTime, People, AttachMoney, ShoppingCart, FavoriteBorder, Favorite, CheckCircle } from '@mui/icons-material'
 import { motion } from 'framer-motion'
 import { useState } from 'react'
 import { Dish, Difficulty } from '../../types'
@@ -54,6 +54,32 @@ export default function DishCard({ dish, onSelect }: DishCardProps) {
             alt={dish.name}
             sx={{ height: 200, objectFit: 'cover' }}
           />
+          {/* Coverage badge */}
+          {dish.coverage !== undefined && (
+            <Box
+              sx={{
+                position: 'absolute',
+                top: 10,
+                left: 10,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.4,
+                bgcolor: dish.coverage >= 1.0 ? 'rgba(34,197,94,0.92)' : 'rgba(251,146,60,0.92)',
+                backdropFilter: 'blur(6px)',
+                borderRadius: 10,
+                px: 1,
+                py: 0.35,
+              }}
+            >
+              {dish.coverage >= 1.0
+                ? <CheckCircle sx={{ fontSize: 13, color: 'white' }} />
+                : <ShoppingCart sx={{ fontSize: 12, color: 'white' }} />
+              }
+              <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: 'white', lineHeight: 1 }}>
+                {dish.coverage >= 1.0 ? 'Всё есть' : `${Math.round(dish.coverage * 100)}%`}
+              </Typography>
+            </Box>
+          )}
           {/* Heart icon top-right */}
           <motion.div
             style={{ position: 'absolute', top: 10, right: 10 }}

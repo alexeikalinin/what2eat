@@ -19,5 +19,6 @@ export interface Dish {
   meal_type?: MealType
   ingredients?: Ingredient[]
   match_count?: number
+  coverage?: number          // 0.0–1.0: доля ключевых ингредиентов блюда, которые есть у пользователя
   missing_ingredients?: Ingredient[]
 }

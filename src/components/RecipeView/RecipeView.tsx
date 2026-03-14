@@ -1,3 +1,4 @@
+import { useState, useRef } from 'react'
 import {
   Box,
   Typography,
@@ -9,14 +10,23 @@ import {
   Grid,
   List,
   ListItem,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material'
-import { ArrowBack, AccessTime, People, OpenInNew } from '@mui/icons-material'
+import { ArrowBack, AccessTime, People, OpenInNew, PhotoCamera } from '@mui/icons-material'
 import { motion } from 'framer-motion'
 import { useAppSelector, useAppDispatch } from '../../hooks/redux'
 import { clearRecipe, setVariant } from '../../store/slices/recipeSlice'
+import { analyzeCalories, clearPhoto } from '../../store/slices/photoSlice'
 import { DIFFICULTY_LABELS, DIFFICULTY_COLORS } from '../../utils/constants'
 import { Difficulty } from '../../types'
 import { getDishImageUrl } from '../../utils/imageUtils'
+import { prepareImageForApi, convertHeicToJpegFile, isHeic } from '../../utils/imageUtils'
+import CalorieCard from '../CalorieCard'
+import { usePlan } from '../../hooks/usePlan'
+import { useModalContext } from '../../contexts/ModalContext'
 
 interface RecipeViewProps {
   onBack: () => void
@@ -26,10 +36,43 @@ export default function RecipeView({ onBack }: RecipeViewProps) {
   const dispatch = useAppDispatch()
   const { recipes, selectedVariant, loading, error } = useAppSelector((state) => state.recipe)
   const currentRecipe = recipes[selectedVariant] ?? null
+  const calorieEstimate = useAppSelector((s) => s.photo.calorieEstimate)
+  const photoStatus = useAppSelector((s) => s.photo.status)
+
+  const { isPremium } = usePlan()
+  const { openPaywall } = useModalContext()
+  const [calorieOpen, setCalorieOpen] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleBack = () => {
     dispatch(clearRecipe())
+    dispatch(clearPhoto())
     onBack()
+  }
+
+  const handleCalorieClick = () => {
+    if (!isPremium) { openPaywall('calories'); return }
+    dispatch(clearPhoto())
+    setUploadError(null)
+    setCalorieOpen(true)
+  }
+
+  const handleCalorieFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadError(null)
+    let fileToUse = file
+    if (isHeic(file)) {
+      try { fileToUse = await convertHeicToJpegFile(file) }
+      catch { setUploadError('Не удалось конвертировать HEIC. Попробуйте JPEG.'); return }
+    }
+    try {
+      const { base64, mimeType } = await prepareImageForApi(fileToUse)
+      dispatch(analyzeCalories({ base64, mimeType }))
+    } catch {
+      setUploadError('Не удалось прочитать фото.')
+    }
   }
 
   const getDifficultyColor = (difficulty: Difficulty) => {
@@ -233,6 +276,25 @@ export default function RecipeView({ onBack }: RecipeViewProps) {
                   </ListItem>
                 ))}
               </List>
+
+              <Button
+                onClick={handleCalorieClick}
+                startIcon={<PhotoCamera sx={{ fontSize: 16 }} />}
+                size="small"
+                fullWidth
+                sx={{
+                  mt: 2,
+                  borderRadius: 2,
+                  fontWeight: 600,
+                  fontSize: '0.82rem',
+                  color: isPremium ? '#FF7A18' : 'rgba(0,0,0,0.4)',
+                  border: `1px solid ${isPremium ? 'rgba(255,122,24,0.4)' : 'rgba(0,0,0,0.15)'}`,
+                  bgcolor: isPremium ? 'rgba(255,122,24,0.06)' : 'transparent',
+                  '&:hover': { bgcolor: isPremium ? 'rgba(255,122,24,0.12)' : 'rgba(0,0,0,0.04)' },
+                }}
+              >
+                {isPremium ? 'Посчитать калории' : '🔒 Посчитать калории (Premium)'}
+              </Button>
             </Paper>
           </Grid>
 
@@ -301,6 +363,50 @@ export default function RecipeView({ onBack }: RecipeViewProps) {
           </Grid>
         </Grid>
       </Box>
+
+      {/* Calorie Dialog */}
+      <Dialog open={calorieOpen} onClose={() => setCalorieOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ fontWeight: 700, pb: 1 }}>📷 Калории блюда</DialogTitle>
+        <DialogContent>
+          {calorieEstimate ? (
+            <CalorieCard estimate={calorieEstimate} />
+          ) : (
+            <Box sx={{ textAlign: 'center', py: 2 }}>
+              {photoStatus === 'analyzing' ? (
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                  <CircularProgress sx={{ color: '#FF7A18' }} />
+                  <Typography variant="body2" color="text.secondary">Анализирую фото…</Typography>
+                </Box>
+              ) : (
+                <>
+                  <Typography variant="body2" sx={{ color: 'rgba(0,0,0,0.55)', mb: 2 }}>
+                    Сфотографируйте готовое блюдо — ИИ оценит калории и КБЖУ
+                  </Typography>
+                  {uploadError && <Alert severity="error" sx={{ mb: 2, textAlign: 'left' }}>{uploadError}</Alert>}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                    onChange={handleCalorieFile}
+                  />
+                  <Button
+                    variant="contained"
+                    startIcon={<PhotoCamera />}
+                    onClick={() => fileInputRef.current?.click()}
+                    sx={{ background: 'linear-gradient(135deg, #FF7A18, #FFB347)', borderRadius: 2 }}
+                  >
+                    Загрузить фото
+                  </Button>
+                </>
+              )}
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setCalorieOpen(false)} sx={{ color: 'rgba(0,0,0,0.45)' }}>Закрыть</Button>
+        </DialogActions>
+      </Dialog>
     </motion.div>
   )
 }

@@ -172,9 +172,11 @@ export default function PhotoUpload({ onIngredientsConfirmed, onBack }: PhotoUpl
   }
 
   const handleConfirm = () => {
+    const lowerSelected = new Set([...selectedNames].map(s => s.toLowerCase().trim()))
     const ids = ingredients
-      .filter((i) => selectedNames.has(i.name))
+      .filter((i) => lowerSelected.has(i.name.toLowerCase().trim()))
       .map((i) => i.id)
+    if (ids.length === 0) return
     dispatch(setSelectedIngredients(ids))
     onIngredientsConfirmed(ids)
   }

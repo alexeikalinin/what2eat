@@ -47,7 +47,7 @@ function App() {
     openPaywall: (reason?: string) => { setPaywallReason(reason); setSuccessPaywallOpen(true) },
   }
   const { selectedIngredients } = useAppSelector((state) => state.ingredients)
-  const { dishes } = useAppSelector((state) => state.dishes)
+  const { dishes, loading: dishesLoading } = useAppSelector((state) => state.dishes)
   const filters = useAppSelector((state) => state.filters)
   const { likedDishIds } = useAppSelector((state) => state.swipe)
   const { user, plan } = useAppSelector((state) => state.user)
@@ -127,8 +127,6 @@ function App() {
       findDishes({
         ingredientIds: ids,
         options: {
-          // "Докупить" toggle: расширяем до 5 недостающих; иначе — авто (1 на каждые 3 ингредиента)
-          allowMissing: filters.allowMissing ? 5 : undefined,
           vegetarianOnly: filters.vegetarianOnly,
           veganOnly: filters.veganOnly,
         },
@@ -173,7 +171,6 @@ function App() {
       findDishes({
         ingredientIds: ids,
         options: {
-          allowMissing: 3,
           vegetarianOnly: filters.vegetarianOnly,
           veganOnly: filters.veganOnly,
         },
@@ -358,6 +355,7 @@ function App() {
         {view === 'dishes' && (
           <SwipeDeck
             dishes={visibleDishes}
+            loading={dishesLoading}
             onDishSelect={(dishId) => handleDishSelect(dishId, 'dishes')}
             onComplete={() => setView('swipe_results')}
             onBack={() => setView('ingredients')}

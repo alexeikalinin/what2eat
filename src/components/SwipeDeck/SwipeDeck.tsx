@@ -15,7 +15,7 @@ interface CardAPI {
   swipe(dir?: string): Promise<void>
   restoreCard(): Promise<void>
 }
-import { Box, Typography, IconButton, Button } from '@mui/material'
+import { Box, Typography, IconButton, Button, CircularProgress } from '@mui/material'
 import { Close, Favorite, ArrowBack, Info, Restaurant } from '@mui/icons-material'
 import { Dish } from '../../types'
 import { useAppDispatch, useAppSelector } from '../../hooks/redux'
@@ -29,15 +29,16 @@ import { useModalContext } from '../../contexts/ModalContext'
 
 interface SwipeDeckProps {
   dishes: Dish[]
+  loading?: boolean
   onDishSelect: (dishId: number) => void
   onComplete: () => void
   onBack: () => void
 }
 
-export default function SwipeDeck({ dishes, onDishSelect, onComplete, onBack }: SwipeDeckProps) {
+export default function SwipeDeck({ dishes, loading = false, onDishSelect, onComplete, onBack }: SwipeDeckProps) {
   const dispatch = useAppDispatch()
   const { currentIndex } = useAppSelector((state) => state.swipe)
-  const { suggestedDishNames } = useAppSelector((state) => state.dishes)
+  const { suggestedDishNames, searchComplete } = useAppSelector((state) => state.dishes)
   const { ingredients, selectedIngredients } = useAppSelector((state) => state.ingredients)
   const [swipeDirection, setSwipeDirection] = useState<Record<number, 'left' | 'right'>>({})
   const [paywallOpen, setPaywallOpen] = useState(false)
@@ -82,6 +83,8 @@ export default function SwipeDeck({ dishes, onDishSelect, onComplete, onBack }: 
       setPaywallOpen(true)
       return
     }
+    const dishId = dishes[currentIndex]?.id
+    if (dishId) setSwipeDirection(prev => ({ ...prev, [dishId]: dir }))
     const card = cardRefsStore.current[currentIndex]
     if (card) card.swipe(dir)
   }
@@ -94,6 +97,16 @@ export default function SwipeDeck({ dishes, onDishSelect, onComplete, onBack }: 
 
   const handleReset = () => {
     dispatch(resetSwipe())
+  }
+
+  // Show spinner while loading OR before first search completes (prevents "nothing found" flash)
+  if (loading || !searchComplete) {
+    return (
+      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', py: 10, gap: 2 }}>
+        <CircularProgress sx={{ color: '#FF7A18' }} />
+        <Typography variant="body2" sx={{ color: 'rgba(0,0,0,0.45)' }}>Ищем подходящие блюда…</Typography>
+      </Box>
+    )
   }
 
   if (dishes.length === 0) {
