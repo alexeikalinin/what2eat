@@ -5,7 +5,8 @@ import type { User } from '@supabase/supabase-js'
 
 // Жёстко приводим к строкам; Vite при отсутствии env на билде подставляет undefined → строка "undefined"
 const RAW_URL = String(import.meta.env.VITE_SUPABASE_URL ?? '').trim()
-const RAW_KEY = String(import.meta.env.VITE_SUPABASE_ANON_KEY ?? '').trim()
+// JWT не может содержать пробелы/переносы — удаляем все whitespace (защита от copy-paste в Vercel UI)
+const RAW_KEY = String(import.meta.env.VITE_SUPABASE_ANON_KEY ?? '').replace(/\s/g, '')
 const SUPABASE_URL = RAW_URL === 'undefined' ? '' : RAW_URL
 const SUPABASE_ANON_KEY = RAW_KEY === 'undefined' ? '' : RAW_KEY
 
