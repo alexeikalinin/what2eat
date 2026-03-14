@@ -4,6 +4,10 @@ import type { User } from '@supabase/supabase-js'
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL ?? ''
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY ?? ''
 
+// DEBUG: убрать после диагностики
+console.log('[Supabase] URL first chars:', JSON.stringify(SUPABASE_URL.substring(0, 10)))
+console.log('[Supabase] KEY set:', !!SUPABASE_ANON_KEY)
+
 export const supabase = createClient(
   SUPABASE_URL || 'https://placeholder.supabase.co',
   SUPABASE_ANON_KEY || 'placeholder'
