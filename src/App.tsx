@@ -11,7 +11,7 @@ import { initAuth, setUser, refreshPlan } from './store/slices/userSlice'
 import { setFocus } from './store/slices/randomizerSlice'
 import { RandomizerFocus } from './services/dishes'
 import { initDatabase } from './services/database'
-import { supabase } from './services/supabase'
+import { supabase, isSupabaseConfigured } from './services/supabase'
 import Layout from './components/Layout'
 import IngredientSelector from './components/IngredientSelector'
 import IngredientsHero from './components/IngredientsHero'
@@ -225,6 +225,15 @@ function App() {
             transition={{ duration: 0.35 }}
           >
             <Box sx={{ pb: 3 }}>
+              {!isSupabaseConfigured() && (
+                <Alert severity="warning" sx={{ mb: 2 }}>
+                  <strong>Supabase не настроен.</strong> Без этого не загрузятся рецепты и не будет входа через Google.
+                  <br />
+                  Локально: скопируйте <code>.env.example</code> в <code>.env</code> и укажите <code>VITE_SUPABASE_URL</code> и <code>VITE_SUPABASE_ANON_KEY</code> (ключ — в Supabase Dashboard → Project Settings → API, anon public).
+                  <br />
+                  На Vercel: добавьте те же переменные в Environment Variables и сделайте <strong>Redeploy</strong> (новый билд).
+                </Alert>
+              )}
               {/* Hero camera section */}
               <IngredientsHero onPhotoClick={() => setView('photo')} />
 

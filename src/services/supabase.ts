@@ -3,10 +3,11 @@ import type { User } from '@supabase/supabase-js'
 
 // Патч Headers — в patch-headers.ts (подключается первым в main.tsx)
 
-// Жёстко приводим к строкам — иначе в части окружений (fetch/Headers) передача
-// не-строки даёт "Failed to execute 'set' on 'Headers': Invalid value"
-const SUPABASE_URL = String(import.meta.env.VITE_SUPABASE_URL ?? '').trim()
-const SUPABASE_ANON_KEY = String(import.meta.env.VITE_SUPABASE_ANON_KEY ?? '').trim()
+// Жёстко приводим к строкам; Vite при отсутствии env на билде подставляет undefined → строка "undefined"
+const RAW_URL = String(import.meta.env.VITE_SUPABASE_URL ?? '').trim()
+const RAW_KEY = String(import.meta.env.VITE_SUPABASE_ANON_KEY ?? '').trim()
+const SUPABASE_URL = RAW_URL === 'undefined' ? '' : RAW_URL
+const SUPABASE_ANON_KEY = RAW_KEY === 'undefined' ? '' : RAW_KEY
 
 const supabaseUrl = SUPABASE_URL || 'https://placeholder.supabase.co'
 const supabaseAnonKey = SUPABASE_ANON_KEY || 'placeholder'

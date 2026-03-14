@@ -1,7 +1,8 @@
-import { supabase } from './supabase'
+import { supabase, isSupabaseConfigured } from './supabase'
 import { Ingredient } from '../types'
 
 export async function getAllIngredients(): Promise<Ingredient[]> {
+  if (!isSupabaseConfigured()) return []
   const { data, error } = await supabase
     .from('ingredients')
     .select('id, name, category, image_url, show_in_selector')
@@ -25,6 +26,7 @@ export async function getAllIngredients(): Promise<Ingredient[]> {
 export async function getIngredientsByCategory(
   category: Ingredient['category']
 ): Promise<Ingredient[]> {
+  if (!isSupabaseConfigured()) return []
   const { data, error } = await supabase
     .from('ingredients')
     .select('id, name, category, image_url, show_in_selector')
@@ -46,6 +48,7 @@ export async function getIngredientsByCategory(
 }
 
 export async function searchIngredients(query: string): Promise<Ingredient[]> {
+  if (!isSupabaseConfigured()) return []
   const { data, error } = await supabase
     .from('ingredients')
     .select('id, name, category, image_url, show_in_selector')

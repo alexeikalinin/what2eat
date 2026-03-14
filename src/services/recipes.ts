@@ -1,4 +1,4 @@
-import { supabase } from './supabase'
+import { supabase, isSupabaseConfigured } from './supabase'
 import { Recipe, RecipeStep, RecipeIngredient } from '../types'
 
 type DishRow = {
@@ -56,12 +56,14 @@ async function buildRecipe(recipeData: {
 
 /** Возвращает первый (или единственный) рецепт блюда */
 export async function getRecipeByDishId(dishId: number): Promise<Recipe | null> {
+  if (!isSupabaseConfigured()) return null
   const recipes = await getAllRecipesForDish(dishId)
   return recipes[0] ?? null
 }
 
 /** Возвращает ВСЕ варианты рецептов блюда (для показа Рецепт 1 / Рецепт 2 …) */
 export async function getAllRecipesForDish(dishId: number): Promise<Recipe[]> {
+  if (!isSupabaseConfigured()) return []
   const { data, error } = await supabase
     .from('recipes')
     .select('id, dish_id, title, source_url, instructions, dishes!inner(name, cooking_time, difficulty, servings, image_url)')

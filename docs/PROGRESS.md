@@ -35,15 +35,15 @@
 - **Ветка:** main
 - **Стек:** React 18, TypeScript, Vite, Redux Toolkit, MUI v5, Supabase (PostgreSQL), Stripe
 - **DB:** Supabase project `zfiyhhsknwpilamljhqu` — 131 блюдо, 149 рецептов
-- **Env (Vercel):** `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_STRIPE_PUBLISHABLE_KEY`, `VITE_STRIPE_PRICE_ID`
+- **Env (Vercel):** обязательно задать для **Production** (и при необходимости Preview): `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_STRIPE_PUBLISHABLE_KEY`, `VITE_STRIPE_PRICE_ID`. Vite подставляет их **на этапе сборки** — без них в билде окажется строка `undefined` и запросы дадут 401 / Invalid API key.
 - **Stripe:** тестовый режим (`pk_test_`)
 
 ---
 
 ## Известные проблемы / в процессе
 
-- **Исправлено в коде (нужен деплой):** `Error fetching ingredients` и `_getSessionFromURL → fetch Invalid value` / `Headers: Invalid value` — причина: в Headers/fetch передавались не-строки. В supabase.ts добавлены `String().trim()` для URL и ключа и auth с PKCE. После деплоя проверить вход через Google и загрузку ингредиентов.
-- В Supabase Dashboard → Authentication → URL Configuration в **Redirect URLs** должна быть строка `https://what2eat-ruby.vercel.app` (и при необходимости `https://what2eat-ruby.vercel.app/**`).
+- **401 / Invalid API key undefined:** если в Vercel не заданы `VITE_SUPABASE_URL` и `VITE_SUPABASE_ANON_KEY` при сборке, в коде подставляется строка `"undefined"`. В коде добавлена обработка (считаем ключ отсутствующим, запросы не уходят). **Решение:** в Vercel → Project → Settings → Environment Variables добавить для Production (и включить "Expose to Build") переменные `VITE_SUPABASE_URL` и `VITE_SUPABASE_ANON_KEY`, затем сделать **Redeploy** (новый билд с правильными значениями).
+- В Supabase Dashboard → Authentication → URL Configuration в **Redirect URLs** должны быть и продакшн, и локальные адреса, например: `https://what2eat-ruby.vercel.app`, `http://localhost:3000`, `http://localhost:3001`. Иначе после входа через Google редирект уйдёт только на первый из списка (часто прод).
 
 ---
 

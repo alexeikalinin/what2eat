@@ -1,8 +1,9 @@
-import { supabase } from './supabase'
+import { supabase, isSupabaseConfigured } from './supabase'
 import { Dish, Ingredient } from '../types'
 
 // Базовые ингредиенты (специи, масла) — расширяем поиск
 async function getBasicIngredientIds(): Promise<number[]> {
+  if (!isSupabaseConfigured()) return []
   const basicNames = ['Соль', 'Перец черный', 'Масло растительное', 'Масло сливочное']
   const { data } = await supabase
     .from('ingredients')
@@ -44,6 +45,7 @@ export async function findDishesByIngredients(
   ingredientIds: number[],
   options: FindDishesOptions = {}
 ): Promise<Dish[]> {
+  if (!isSupabaseConfigured()) return []
   const autoMissing = Math.max(1, Math.ceil(ingredientIds.length / 3))
   const { allowMissing = autoMissing, vegetarianOnly = false, veganOnly = false } = options
 
@@ -271,6 +273,7 @@ export function randomizeDishes(dishes: Dish[]): Dish[] {
 }
 
 export async function getDishesByFocus(focus: RandomizerFocus): Promise<Dish[]> {
+  if (!isSupabaseConfigured()) return []
   try {
     let query = supabase
       .from('dishes')
@@ -297,6 +300,7 @@ export async function getDishesByFocus(focus: RandomizerFocus): Promise<Dish[]> 
 }
 
 export async function getQuickDishes(limit = 50): Promise<Dish[]> {
+  if (!isSupabaseConfigured()) return []
   try {
     const { data, error } = await supabase
       .from('dishes')
@@ -313,6 +317,7 @@ export async function getQuickDishes(limit = 50): Promise<Dish[]> {
 }
 
 export async function getDishOfDay(): Promise<Dish | null> {
+  if (!isSupabaseConfigured()) return null
   try {
     const { count } = await supabase.from('dishes').select('*', { count: 'exact', head: true })
     const total = count ?? 0
@@ -338,6 +343,7 @@ export async function getDishOfDay(): Promise<Dish | null> {
 }
 
 export async function getDishById(dishId: number): Promise<Dish | null> {
+  if (!isSupabaseConfigured()) return null
   try {
     const { data, error } = await supabase
       .from('dishes')
