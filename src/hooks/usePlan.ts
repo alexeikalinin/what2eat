@@ -34,6 +34,7 @@ export function usePlan() {
   }
 
   function canSwipe(): boolean {
+    if (plan === 'loading') return false
     if (isPremium) return true
     return getSwipesUsed() < DAILY_SWIPE_LIMIT
   }

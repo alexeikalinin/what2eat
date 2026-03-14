@@ -68,14 +68,21 @@ export default function SwipeDeck({ dishes, loading = false, onDishSelect, onCom
   const remaining = dishes.length - currentIndex
 
   const handleSwipe = useCallback(
-    (direction: string, dishId: number) => {
+    (direction: string, dishId: number, index: number) => {
+      // Block manual drag swipe if limit exceeded
+      if (!canSwipe()) {
+        const card = cardRefsStore.current[index]
+        if (card) card.restoreCard()
+        setPaywallOpen(true)
+        return
+      }
       const dir = direction === 'right' ? 'right' : 'left'
       dispatch(swipeDish({ dishId, direction: dir }))
       dispatch(incrementSwipeUsage())
       trackLocalSwipe()
       setSwipeDirection(prev => ({ ...prev, [dishId]: dir }))
     },
-    [dispatch, trackLocalSwipe]
+    [dispatch, trackLocalSwipe, canSwipe]
   )
 
   const swipe = (dir: 'left' | 'right') => {
@@ -313,7 +320,7 @@ export default function SwipeDeck({ dishes, loading = false, onDishSelect, onCom
                   >
                     <TinderCard
                     ref={getCardRef(index)}
-                    onSwipe={(dir) => handleSwipe(dir, dish.id)}
+                    onSwipe={(dir) => handleSwipe(dir, dish.id, index)}
                     onCardLeftScreen={() => {
                       if (index === dishes.length - 1) {
                         dispatch(markSessionComplete())
