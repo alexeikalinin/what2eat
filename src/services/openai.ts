@@ -12,7 +12,7 @@ const DIRECT_API_URL = 'https://api.openai.com/v1/chat/completions'
 
 /** Возвращает заголовки для запроса к OpenAI — через прокси если есть Supabase, иначе напрямую */
 async function getOpenAIHeaders(): Promise<{ url: string; headers: Record<string, string>; useProxy: boolean }> {
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined
+  const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL as string | undefined)?.replace(/\s/g, '')
   if (supabaseUrl) {
     const { data } = await supabase.auth.getSession()
     const token = data?.session?.access_token

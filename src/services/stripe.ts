@@ -15,10 +15,10 @@ export async function createCheckoutSession(plan: StripePlan = 'monthly'): Promi
   const token = sessionData?.session?.access_token
   if (!token) throw new Error('Необходима авторизация')
 
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string
+  const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL as string)?.replace(/\s/g, '')
   if (!supabaseUrl) throw new Error('Supabase не настроен')
 
-  const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string
+  const anonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY as string)?.replace(/\s/g, '')
   const res = await fetch(`${supabaseUrl}/functions/v1/create-checkout`, {
     method: 'POST',
     headers: {
