@@ -307,7 +307,7 @@ export async function getQuickDishes(limit = 50): Promise<Dish[]> {
     if (error) throw error
     return (data ?? []).map((row) => rowToDish(row as Record<string, unknown>))
   } catch (error) {
-    console.error('Error getting quick dishes:', error)
+    console.error('Error getting quick dishes:', (error as {message?:string,code?:string})?.message, (error as {code?:string})?.code)
     return []
   }
 }

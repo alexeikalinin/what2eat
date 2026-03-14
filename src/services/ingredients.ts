@@ -9,7 +9,7 @@ export async function getAllIngredients(): Promise<Ingredient[]> {
     .order('name')
 
   if (error) {
-    console.error('Error fetching ingredients:', error)
+    console.error('Error fetching ingredients:', error.message, error.code, error.details)
     return []
   }
 
