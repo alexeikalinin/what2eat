@@ -8,7 +8,7 @@ import {
   Button,
   IconButton,
 } from '@mui/material'
-import { AccessTime, People, AttachMoney, ShoppingCart, FavoriteBorder, Favorite, CheckCircle } from '@mui/icons-material'
+import { AccessTime, People, ShoppingCart, FavoriteBorder, Favorite, CheckCircle } from '@mui/icons-material'
 import { motion } from 'framer-motion'
 import { useState } from 'react'
 import { Dish, Difficulty } from '../../types'
@@ -145,14 +145,6 @@ export default function DishCard({ dish, onSelect }: DishCardProps) {
               size="small"
               sx={{ bgcolor: getDifficultyColor(dish.difficulty), color: 'white', fontWeight: 700, fontSize: '0.77rem' }}
             />
-            {dish.estimated_cost != null && (
-              <Chip
-                icon={<AttachMoney sx={{ fontSize: '13px !important', color: '#15803d !important' }} />}
-                label={`$${dish.estimated_cost.toFixed(0)}`}
-                size="small"
-                sx={{ bgcolor: 'rgba(34,197,94,0.12)', color: '#15803d', border: '1px solid rgba(34,197,94,0.28)', fontWeight: 600, fontSize: '0.77rem' }}
-              />
-            )}
             {dish.is_vegan && (
               <Chip label="🌱 Веган" size="small" sx={{ bgcolor: '#F0FDF4', color: '#22C55E', border: 'none', fontSize: '0.77rem' }} />
             )}

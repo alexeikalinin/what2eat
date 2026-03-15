@@ -268,18 +268,8 @@ const DISH_IMAGE_OVERRIDES: { pattern: RegExp; url: string }[] = [
   { pattern: /дзадзики/i, url: 'https://images.unsplash.com/photo-1517191434949-5e90cd67d2b6?w=400&h=520&fit=crop&q=80' },
 ]
 
-// Генерация цветов для placeholder изображений на основе названия блюда
-export function getDishImageUrl(dishName: string, imageUrl: string | null | undefined): string {
-  // Сначала проверяем keyword override — он точнее DB значений
-  for (const { pattern, url } of DISH_IMAGE_OVERRIDES) {
-    if (pattern.test(dishName)) return url
-  }
-
-  if (imageUrl) {
-    return imageUrl
-  }
-
-  // Генерируем цвет на основе названия блюда
+/** SVG-заглушка с эмодзи и градиентом — без override-логики. Используется в onError. */
+export function getDishSvgFallback(dishName: string): string {
   const colors = [
     '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8',
     '#F7DC6F', '#BB8FCE', '#85C1E2', '#F8B739', '#52BE80',
@@ -296,7 +286,6 @@ export function getDishImageUrl(dishName: string, imageUrl: string | null | unde
   const darkColor = adjustBrightness(color, -30)
   const emoji = pickFoodEmoji(dishName)
 
-  // SVG portrait (400×520) с большим эмодзи и названием
   const svg = `<svg width="400" height="520" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="grad" x1="0%" y1="0%" x2="60%" y2="100%">
@@ -310,6 +299,20 @@ export function getDishImageUrl(dishName: string, imageUrl: string | null | unde
     </svg>`
 
   return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svg)))}`
+}
+
+// Генерация цветов для placeholder изображений на основе названия блюда
+export function getDishImageUrl(dishName: string, imageUrl: string | null | undefined): string {
+  // Сначала проверяем keyword override — он точнее DB значений
+  for (const { pattern, url } of DISH_IMAGE_OVERRIDES) {
+    if (pattern.test(dishName)) return url
+  }
+
+  if (imageUrl) {
+    return imageUrl
+  }
+
+  return getDishSvgFallback(dishName)
 }
 
 function adjustBrightness(hex: string, percent: number): string {

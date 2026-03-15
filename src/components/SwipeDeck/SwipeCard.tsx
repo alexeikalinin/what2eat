@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { Box, Typography, Chip, Skeleton } from '@mui/material'
-import { AccessTime, AttachMoney, ShoppingCart } from '@mui/icons-material'
+import { AccessTime, ShoppingCart } from '@mui/icons-material'
 import { Dish } from '../../types'
 import { DIFFICULTY_LABELS, DIFFICULTY_COLORS } from '../../utils/constants'
-import { getDishImageUrl } from '../../utils/imageUtils'
+import { getDishImageUrl, getDishSvgFallback } from '../../utils/imageUtils'
 
 interface SwipeCardProps {
   dish: Dish
@@ -12,7 +12,6 @@ interface SwipeCardProps {
 
 export default function SwipeCard({ dish, swipeDirection }: SwipeCardProps) {
   const imageUrl = getDishImageUrl(dish.name, dish.image_url)
-  const fallbackUrl = getDishImageUrl(dish.name, null)
   const [imgLoaded, setImgLoaded] = useState(false)
 
   return (
@@ -52,7 +51,8 @@ export default function SwipeCard({ dish, swipeDirection }: SwipeCardProps) {
         alt={dish.name}
         onLoad={() => setImgLoaded(true)}
         onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
-          e.currentTarget.src = fallbackUrl
+          e.currentTarget.onerror = null
+          e.currentTarget.src = getDishSvgFallback(dish.name)
           setImgLoaded(true)
         }}
         sx={{
@@ -128,21 +128,7 @@ export default function SwipeCard({ dish, swipeDirection }: SwipeCardProps) {
               fontSize: '0.78rem',
             }}
           />
-          {dish.estimated_cost != null && (
-            <Chip
-              icon={<AttachMoney sx={{ color: '#4ade80 !important', fontSize: '13px !important' }} />}
-              label={`$${dish.estimated_cost.toFixed(0)}`}
-              size="small"
-              sx={{
-                bgcolor: 'rgba(34,197,94,0.2)',
-                color: '#86efac',
-                border: '1px solid rgba(34,197,94,0.3)',
-                fontWeight: 600,
-                fontSize: '0.78rem',
-              }}
-            />
-          )}
-          {dish.is_vegan && (
+{dish.is_vegan && (
             <Chip
               label="Веган"
               size="small"

@@ -4,7 +4,7 @@ import { AccessTime, ChevronLeft, ChevronRight } from '@mui/icons-material'
 import { motion } from 'framer-motion'
 import { Dish } from '../../types'
 import { getQuickDishes, getDishOfDay } from '../../services/dishes'
-import { getDishImageUrl } from '../../utils/imageUtils'
+import { getDishImageUrl, getDishSvgFallback } from '../../utils/imageUtils'
 
 const CUISINE_TILES = [
   { key: 'russian',          label: 'Русская',        emoji: '🥘', from: '#FF6B6B', to: '#EE4545' },
@@ -151,8 +151,8 @@ export default function QuickIdeas({ onDishSelect, onCuisineSelect }: QuickIdeas
               alt={dishOfDay.name}
               sx={{ width: '100%', height: 130, objectFit: 'cover', display: 'block' }}
               onError={(e) => {
-                const img = e.currentTarget
-                img.src = getDishImageUrl(dishOfDay.name, null)
+                e.currentTarget.onerror = null
+                e.currentTarget.src = getDishSvgFallback(dishOfDay.name)
               }}
             />
             <Box sx={{ px: 1.5, py: 1.25, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -229,8 +229,8 @@ export default function QuickIdeas({ onDishSelect, onCuisineSelect }: QuickIdeas
                   alt={dish.name}
                   sx={{ width: '100%', height: 90, objectFit: 'cover', display: 'block' }}
                   onError={(e) => {
-                    const img = e.currentTarget
-                    img.src = getDishImageUrl(dish.name, null)
+                    e.currentTarget.onerror = null
+                    e.currentTarget.src = getDishSvgFallback(dish.name)
                   }}
                 />
                 <Box sx={{ p: 0.75 }}>
