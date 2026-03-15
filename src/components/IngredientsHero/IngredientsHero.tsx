@@ -1,13 +1,33 @@
+import { useRef } from 'react'
 import { Box, Typography, Button } from '@mui/material'
 import { CameraAlt, PhotoLibrary } from '@mui/icons-material'
 import { motion } from 'framer-motion'
 
 interface IngredientsHeroProps {
   onPhotoClick: () => void
+  onCameraCapture?: (file: File) => void
   previewImageUrl?: string | null
 }
 
-export default function IngredientsHero({ onPhotoClick, previewImageUrl }: IngredientsHeroProps) {
+export default function IngredientsHero({ onPhotoClick, onCameraCapture, previewImageUrl }: IngredientsHeroProps) {
+  const cameraInputRef = useRef<HTMLInputElement>(null)
+
+  const handleCameraClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (onCameraCapture) {
+      cameraInputRef.current?.click()
+    } else {
+      onPhotoClick()
+    }
+  }
+
+  const handleCameraFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file && onCameraCapture) {
+      onCameraCapture(file)
+      e.target.value = ''
+    }
+  }
   return (
     <Box>
       {/* Hero Card */}
@@ -121,10 +141,19 @@ export default function IngredientsHero({ onPhotoClick, previewImageUrl }: Ingre
             </Typography>
 
             <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+              {/* Hidden camera input */}
+              <input
+                ref={cameraInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                style={{ display: 'none' }}
+                onChange={handleCameraFile}
+              />
               <Button
                 variant="contained"
                 startIcon={<CameraAlt sx={{ fontSize: 18 }} />}
-                onClick={(e) => { e.stopPropagation(); onPhotoClick() }}
+                onClick={handleCameraClick}
                 sx={{
                   bgcolor: 'white',
                   color: '#FF7A18',

@@ -35,6 +35,7 @@ function App() {
   const dispatch = useAppDispatch()
   const [view, setView] = useState<View>('ingredients')
   const [prevView, setPrevView] = useState<View>('swipe_results')
+  const [initialCameraFile, setInitialCameraFile] = useState<File | null>(null)
   const [showTutorial, setShowTutorial] = useState(() => !getTutorialSeen())
   const [dbInitialized, setDbInitialized] = useState(false)
   const [dbError, setDbError] = useState<string | null>(null)
@@ -232,7 +233,10 @@ function App() {
                 </Alert>
               )}
               {/* Hero camera section */}
-              <IngredientsHero onPhotoClick={() => setView('photo')} />
+              <IngredientsHero
+                onPhotoClick={() => setView('photo')}
+                onCameraCapture={(file) => { setInitialCameraFile(file); setView('photo') }}
+              />
 
               {/* Manual ingredient picker — collapsed by default */}
               <Box sx={{ mt: 3 }}>
@@ -348,7 +352,8 @@ function App() {
         {view === 'photo' && (
           <PhotoUpload
             onIngredientsConfirmed={handlePhotoIngredientsConfirmed}
-            onBack={() => setView('ingredients')}
+            onBack={() => { setInitialCameraFile(null); setView('ingredients') }}
+            initialFile={initialCameraFile}
           />
         )}
 

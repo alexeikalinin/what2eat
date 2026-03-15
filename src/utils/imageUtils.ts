@@ -144,9 +144,9 @@ const DISH_IMAGE_OVERRIDES: { pattern: RegExp; url: string }[] = [
   // Карри (до курицы)
   { pattern: /карри/i, url: 'https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=400&h=520&fit=crop&q=80' },
   // Тажин (до курицы)
-  { pattern: /тажин|таджин/i, url: 'https://images.unsplash.com/photo-1598103442097-8b74394b95c3?w=400&h=520&fit=crop&q=80' },
-  // Сациви, Паприкаш, Чкмерули (до курицы)
-  { pattern: /сациви|паприкаш|чкмерул/i, url: 'https://images.unsplash.com/photo-1598103442097-8b74394b95c3?w=400&h=520&fit=crop&q=80' },
+  { pattern: /тажин|таджин/i, url: 'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=400&h=520&fit=crop&q=80' },
+  // Сациви, Паприкаш (Чкмерули — есть DALL-E в Supabase Storage, убран из override)
+  { pattern: /сациви|паприкаш/i, url: 'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=400&h=520&fit=crop&q=80' },
 
   // Семга / лосось (до общей рыбы)
   { pattern: /сёмг|семг|лосос/i, url: 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=400&h=520&fit=crop&q=80' },
@@ -186,7 +186,7 @@ const DISH_IMAGE_OVERRIDES: { pattern: RegExp; url: string }[] = [
   { pattern: /пицц/i, url: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400&h=520&fit=crop&q=80' },
 
   // Курица
-  { pattern: /курица|куриц|цыплёнок|цыпл/i, url: 'https://images.unsplash.com/photo-1598103442097-8b74394b95c3?w=400&h=520&fit=crop&q=80' },
+  { pattern: /курица|куриц|цыплёнок|цыпл/i, url: 'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=400&h=520&fit=crop&q=80' },
 
   // Мясо / стейк
   { pattern: /стейк/i, url: 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=400&h=520&fit=crop&q=80' },
@@ -235,13 +235,13 @@ const DISH_IMAGE_OVERRIDES: { pattern: RegExp; url: string }[] = [
 
   // Хлеб / сэндвичи / тосты
   { pattern: /сэндвич|бутерброд/i, url: 'https://images.unsplash.com/photo-1481070414801-51fd732d7184?w=400&h=520&fit=crop&q=80' },
-  { pattern: /тост|гренк|крок-месье|крок месье/i, url: 'https://images.unsplash.com/photo-1484723091739-30990ca54c6b?w=400&h=520&fit=crop&q=80' },
+  { pattern: /тост|гренк|крок-месье|крок месье/i, url: 'https://images.unsplash.com/photo-1481070414801-51fd732d7184?w=400&h=520&fit=crop&q=80' },
 
   // Бургер
   { pattern: /бургер/i, url: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&h=520&fit=crop&q=80' },
 
   // Авокадо
-  { pattern: /авокадо/i, url: 'https://images.unsplash.com/photo-1541519227354-08fa5d50c820?w=400&h=520&fit=crop&q=80' },
+  { pattern: /авокадо/i, url: 'https://images.unsplash.com/photo-1543362906-acfc16c67564?w=400&h=520&fit=crop&q=80' },
 
   // Творог / сырники
   { pattern: /сырник|творог/i, url: 'https://images.unsplash.com/photo-1504754524776-8f4f37790ca0?w=400&h=520&fit=crop&q=80' },

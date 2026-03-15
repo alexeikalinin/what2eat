@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import {
   Box,
   Typography,
@@ -26,13 +26,15 @@ import CalorieCard from '../CalorieCard'
 import { usePlan } from '../../hooks/usePlan'
 import PaywallModal from '../PaywallModal'
 import { useModalContext } from '../../contexts/ModalContext'
+import PremiumHint from '../PremiumHint'
 
 interface PhotoUploadProps {
   onIngredientsConfirmed: (ingredientIds: number[]) => void
   onBack: () => void
+  initialFile?: File | null
 }
 
-export default function PhotoUpload({ onIngredientsConfirmed, onBack }: PhotoUploadProps) {
+export default function PhotoUpload({ onIngredientsConfirmed, onBack, initialFile }: PhotoUploadProps) {
   const dispatch = useAppDispatch()
   const { status, detectedIngredientNames, calorieEstimate, error } = useAppSelector(
     (state) => state.photo
@@ -127,6 +129,12 @@ export default function PhotoUpload({ onIngredientsConfirmed, onBack }: PhotoUpl
     },
     [dispatch, ingredients, tab, canUseAIPhoto, canUseCalories, trackLocalAiPhoto, DAILY_AI_PHOTO_LIMIT]
   )
+
+  // Автоматически обрабатываем файл из камеры при открытии
+  useEffect(() => {
+    if (initialFile) handleFile(initialFile)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
@@ -494,6 +502,16 @@ export default function PhotoUpload({ onIngredientsConfirmed, onBack }: PhotoUpl
                 >
                   Найти блюда ({selectedNames.size} продуктов)
                 </Button>
+
+                {!isPremium && !canUseAIPhoto() && (
+                  <Box sx={{ mt: 2 }}>
+                    <PremiumHint
+                      variant="banner"
+                      text={`Исчерпан дневной лимит (${DAILY_AI_PHOTO_LIMIT} фото). Premium — без ограничений.`}
+                      paywallReason={`AI распознавание ингредиентов: ${DAILY_AI_PHOTO_LIMIT} фото в день бесплатно. Premium — без ограничений.`}
+                    />
+                  </Box>
+                )}
               </>
             )}
           </Box>
