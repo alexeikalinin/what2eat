@@ -44,6 +44,7 @@ if (!SERVICE_KEY) {
 
 // Промпты по имени блюда — точные описания для DALL-E 3
 const DISH_PROMPTS: Record<string, string> = {
+  // Уже сгенерированы (раунд 1)
   'Хачапури по-аджарски': 'Georgian Adjarian khachapuri, boat-shaped bread filled with melted cheese and egg yolk in the center, professional food photography, top view, wooden table, warm lighting',
   'Чкмерули': 'Chkmeruli Georgian chicken in creamy garlic milk sauce, cast iron pan, professional food photography, top-down view, rustic wooden background',
   'Дзадзики': 'Greek tzatziki sauce in white bowl, cucumber slices, fresh dill, drizzle of olive oil, professional food photography, Mediterranean style',
@@ -51,6 +52,24 @@ const DISH_PROMPTS: Record<string, string> = {
   'Бёф Бургиньон': 'French Boeuf Bourguignon beef stew with red wine, mushrooms, pearl onions and carrots in a Dutch oven, professional food photography, warm rustic style',
   'Говяжий гуляш': 'Hungarian beef goulash with paprika sauce, tender beef chunks, served with egg noodles or bread, professional food photography, overhead view',
   'Польский бигос': 'Polish bigos hunter stew with sauerkraut, mixed meats, mushrooms and prunes in a pot, professional food photography, rustic style',
+  // Раунд 2 — специфичные блюда с неподходящими категорийными фото
+  'Куриный рамен': 'Japanese ramen noodle soup with chicken, soft-boiled egg halves, nori sheet, bamboo shoots, green onions, rich golden broth, dark bowl, professional food photography, overhead',
+  'Суп Том Ям': 'Thai Tom Yam Kung soup with shrimp, coconut milk, lemongrass, lime leaves, mushrooms, red chili, clear broth, professional food photography, overhead shot',
+  'Луковый суп по-французски': 'French onion soup with caramelized onions, thick layer of melted Gruyere cheese on toasted bread, white ceramic bowl, rustic French bistro style',
+  'Суп Буйабес': 'French Bouillabaisse seafood soup with fish, mussels, shrimp, clams, saffron broth, served with rouille sauce and toasted baguette, professional food photography',
+  'Мексиканский суп с фасолью': 'Mexican black bean soup with corn, chili peppers, tomatoes, garnished with sour cream, cilantro and tortilla strips, overhead shot',
+  'Минестроне': 'Italian Minestrone soup with colorful vegetables, pasta, cannellini beans, tomato broth, sprinkled with parmesan, wooden table, professional food photography',
+  'Шакшука': 'Shakshuka with eggs poached in spiced tomato and red pepper sauce, cast iron skillet, fresh herbs, crusty bread on side, overhead food photography',
+  'Греческий салат': 'Greek salad with large feta cheese block, kalamata olives, ripe tomatoes, cucumber, red onion rings, drizzled with olive oil, white plate, overhead shot',
+  'Салат Цезарь с курицей': 'Caesar salad with grilled chicken slices, crispy romaine lettuce, large croutons, shaved parmesan, creamy Caesar dressing, overhead shot, restaurant style',
+  'Салат Оливье': 'Russian Olivier salad with diced potatoes, carrots, pickles, peas, eggs and mayonnaise, classic Soviet New Year salad, white bowl, overhead',
+  'Салат из свеклы с чесноком': 'Russian beet salad with grated beetroot, garlic and mayonnaise, deep purple color, garnished with fresh dill, white bowl, overhead shot',
+  'Картошка с грибами по-польски': 'Polish potato and mushroom dish, sliced potatoes with fried forest mushrooms, onion, sour cream sauce, rustic pan, food photography',
+  'Киш Лорен': 'French Quiche Lorraine with crispy golden crust, creamy bacon and cheese filling, fresh thyme garnish, white plate, professional food photography',
+  'Свекольник холодный': 'Cold Russian beet soup Svyokolnik, vibrant pink color with sour cream swirl, cucumber, dill, egg, white bowl, summer food photography',
+  'Морковь по-корейски': 'Korean-style spiced marinated carrot salad Morkovcha, bright orange shreds with coriander seeds and sesame, close-up appetizing food photography',
+  'Начос с сальсой': 'Nachos with melted cheddar cheese, fresh guacamole, tomato salsa, jalapeno slices, sour cream, served in a large bowl, professional food photography',
+  'Фалафель': 'Crispy falafel balls on plate with tahini sauce, fresh pita bread, tomato cucumber salad, lemon wedge, Middle Eastern food photography, overhead',
 }
 
 interface Dish {
@@ -166,18 +185,27 @@ async function updateDishImageUrl(dishId: number, imageUrl: string) {
   }
 }
 
-async function getDishesWithoutImages(): Promise<Dish[]> {
-  const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/dishes?select=id,name,image_url&image_url=is.null&order=name`,
-    {
-      headers: {
-        Authorization: `Bearer ${SERVICE_KEY}`,
-        apikey: SERVICE_KEY!,
-      },
-    }
-  )
+async function getDishesForGeneration(): Promise<Dish[]> {
+  // Все блюда из DISH_PROMPTS — нужно сгенерировать/перегенерировать
+  const targetNames = Object.keys(DISH_PROMPTS)
+
+  // Получаем все блюда по именам из промптов + блюда с NULL image_url
+  const encoded = targetNames.map(n => encodeURIComponent(`"${n}"`)).join(',')
+  const url = `${SUPABASE_URL}/rest/v1/dishes?select=id,name,image_url&or=(image_url.is.null,name.in.(${encoded}))&order=name`
+
+  const res = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${SERVICE_KEY}`,
+      apikey: SERVICE_KEY!,
+    },
+  })
   if (!res.ok) throw new Error('Не удалось получить блюда')
-  return res.json() as Promise<Dish[]>
+  const all = await res.json() as Dish[]
+
+  // Пропускаем блюда, которые уже имеют изображение из Supabase Storage
+  return all.filter(d =>
+    d.image_url === null || !d.image_url.includes('/storage/v1/object/public/dish-images/')
+  )
 }
 
 async function main() {
@@ -186,14 +214,14 @@ async function main() {
   await ensureBucketExists()
   console.log()
 
-  const dishes = await getDishesWithoutImages()
+  const dishes = await getDishesForGeneration()
   if (dishes.length === 0) {
-    console.log('✅ Все блюда уже имеют изображения!')
+    console.log('✅ Все целевые блюда уже имеют изображения из Supabase Storage!')
     return
   }
 
-  console.log(`📋 Блюд без изображений: ${dishes.length}`)
-  for (const d of dishes) console.log(`   • ${d.name} (id=${d.id})`)
+  console.log(`📋 Блюд для генерации: ${dishes.length}`)
+  for (const d of dishes) console.log(`   • ${d.name} (id=${d.id}) — ${d.image_url ? 'неверное фото' : 'нет фото'}`)
   console.log()
 
   let success = 0
