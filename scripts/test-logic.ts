@@ -64,6 +64,10 @@ async function findDishes(ingredientIds: number[]): Promise<DishResult[]> {
   const userSet = new Set(ingredientIds)
   const availableSet = new Set([...ingredientIds, ...pantrySet])
 
+  // Fuzzy: user ingredient names for substring matching
+  const { data: userIngData } = await supabase.from('ingredients').select('id, name').in('id', ingredientIds)
+  const userIngNamesLower = (userIngData ?? []).map(r => (r.name as string).toLowerCase())
+
   const { data: matchRows } = await supabase
     .from('dish_ingredients').select('dish_id').in('ingredient_id', ingredientIds)
   const candidateIds = [...new Set((matchRows ?? []).map(r => r.dish_id as number))]
@@ -75,11 +79,18 @@ async function findDishes(ingredientIds: number[]): Promise<DishResult[]> {
   const { data: diRows } = await supabase
     .from('dish_ingredients').select('dish_id, ingredient_id').in('dish_id', candidateIds)
 
-  // ingredient names for display
+  // ingredient names for display + fuzzy
   const allIngIds = [...new Set((diRows ?? []).map(r => r.ingredient_id as number))]
   const { data: ingRows } = await supabase.from('ingredients').select('id, name').in('id', allIngIds)
   const ingNameMap = new Map<number, string>()
   for (const r of ingRows ?? []) ingNameMap.set(r.id as number, r.name as string)
+
+  function isFuzzyCovered(ingId: number): boolean {
+    if (userSet.has(ingId)) return true
+    const name = ingNameMap.get(ingId)?.toLowerCase()
+    if (!name || name.length < 3) return false
+    return userIngNamesLower.some(un => un.includes(name))
+  }
 
   const dishIngMap = new Map<number, number[]>()
   for (const r of diRows ?? []) {
@@ -89,14 +100,21 @@ async function findDishes(ingredientIds: number[]): Promise<DishResult[]> {
   }
 
   const results: DishResult[] = []
+  const seenNames = new Set<string>()
+
   for (const dish of dishRows ?? []) {
-    const allIngIds = dishIngMap.get(dish.id as number) || []
-    const keyIngIds = allIngIds.filter(id => !pantrySet.has(id))
-    const matchedKey = keyIngIds.filter(id => userSet.has(id))
-    const missingKey = keyIngIds.filter(id => !availableSet.has(id))
+    const nameLower = (dish.name as string).toLowerCase()
+    if (seenNames.has(nameLower)) continue
+
+    const allIds = dishIngMap.get(dish.id as number) || []
+    const keyIngIds = allIds.filter(id => !pantrySet.has(id))
+    const matchedKey = keyIngIds.filter(id => isFuzzyCovered(id))
+    const missingKey = keyIngIds.filter(id => !availableSet.has(id) && !isFuzzyCovered(id))
     const coverage = keyIngIds.length > 0 ? matchedKey.length / keyIngIds.length : 1.0
-    const hasUser = allIngIds.some(id => userSet.has(id))
+    const hasUser = allIds.some(id => userSet.has(id) || isFuzzyCovered(id))
     if (!hasUser || coverage < 0.5) continue
+
+    seenNames.add(nameLower)
     results.push({
       id: dish.id as number,
       name: dish.name as string,
@@ -390,6 +408,221 @@ async function test10_recipes_integrity() {
   }
 }
 
+// ── ТЕСТ 11: Fuzzy matching — "Сливочные помидоры" покрывает "Помидоры" ────
+async function test11_fuzzy_matching() {
+  console.log('\n' + W('═══ ТЕСТ 11: Fuzzy matching (сообщённый баг) ═══'))
+
+  // Найдём "Сливочные помидоры" и "Яйца" в БД
+  const { data: ings } = await supabase
+    .from('ingredients').select('id, name')
+    .in('name', ['Сливочные помидоры', 'Яйца', 'Йогурт', 'Сыр', 'Салат'])
+  const ingMap = new Map<string, number>()
+  for (const r of ings ?? []) ingMap.set(r.name as string, r.id as number)
+
+  const hasSlivchnye = ingMap.has('Сливочные помидоры')
+  const hasYajtsa = ingMap.has('Яйца')
+  assert('Ингредиент "Сливочные помидоры" существует в БД', hasSlivchnye)
+  assert('Ингредиент "Яйца" существует в БД', hasYajtsa)
+  if (!hasSlivchnye || !hasYajtsa) return
+
+  // Проверяем: нет ли "Помидоры" в БД
+  const { data: pom } = await supabase.from('ingredients').select('id, name').eq('name', 'Помидоры').limit(1)
+  assert('"Помидоры" существует в БД', (pom ?? []).length > 0)
+
+  // Поиск с "Сливочными помидорами" + Яйца
+  const selectedIds = [ingMap.get('Яйца')!, ingMap.get('Сливочные помидоры')!].filter(Boolean)
+  const results = await findDishes(selectedIds)
+
+  const yachnitsa = results.find(d => d.name.toLowerCase().includes('яичница') && d.name.toLowerCase().includes('помидор'))
+  if (yachnitsa) {
+    assert(
+      '"Яичница с помидорами" найдена при выборе "Сливочные помидоры" + "Яйца"',
+      true
+    )
+    assert(
+      '"Яичница с помидорами" в Tier1 (coverage=100%)',
+      yachnitsa.tier === 1,
+      `tier=${yachnitsa.tier}, coverage=${Math.round(yachnitsa.coverage * 100)}%, missing=${yachnitsa.missing.join(',')}`
+    )
+    assert(
+      '"Помидоры" НЕ в списке "докупить"',
+      !yachnitsa.missing.some(m => m.toLowerCase().includes('помидор')),
+      `missing: ${yachnitsa.missing.join(', ')}`
+    )
+  } else {
+    assert('"Яичница с помидорами" найдена при fuzzy matching', false, 'блюдо не найдено')
+  }
+
+  // Fuzzy: "Помидоры черри" → "Помидоры"
+  const { data: cherriData } = await supabase.from('ingredients').select('id, name').ilike('name', '%черри%').limit(5)
+  const cherriPom = (cherriData ?? []).find((r: any) => (r.name as string).toLowerCase().includes('помидор'))
+  if (cherriPom) {
+    const ids2 = [ingMap.get('Яйца')!, cherriPom.id as number].filter(Boolean)
+    const r2 = await findDishes(ids2)
+    const y2 = r2.find(d => d.name.toLowerCase().includes('яичница') && d.name.toLowerCase().includes('помидор'))
+    assert(
+      `"${cherriPom.name}" тоже покрывает "Помидоры" (fuzzy)`,
+      y2 !== undefined && y2.tier === 1,
+      y2 ? `tier=${y2.tier}` : 'блюдо не найдено'
+    )
+  }
+}
+
+// ── ТЕСТ 12: Дублирование блюд в результатах ─────────────────────────────
+async function test12_no_duplicate_names() {
+  console.log('\n' + W('═══ ТЕСТ 12: Дублирование блюд в выдаче ═══'))
+
+  const nameMap = await getIngredientIdsByNames(['Яйца', 'Помидоры', 'Сыр', 'Молоко', 'Курица'])
+  const ids = [...nameMap.values()].filter(Boolean)
+  const dishes = await findDishes(ids)
+
+  const names = dishes.map(d => d.name.toLowerCase())
+  const uniqueNames = new Set(names)
+
+  assert('Нет дублирующихся названий блюд в выдаче', names.length === uniqueNames.size,
+    names.filter((n, i) => names.indexOf(n) !== i).join(', '))
+
+  // Проверим БД на дубли
+  const { data: allDishes } = await supabase.from('dishes').select('id, name').limit(300)
+  const nameCounts = new Map<string, number>()
+  for (const d of allDishes ?? []) {
+    const n = (d.name as string).toLowerCase()
+    nameCounts.set(n, (nameCounts.get(n) ?? 0) + 1)
+  }
+  const duplicateNames = [...nameCounts.entries()].filter(([, count]) => count > 1)
+  if (duplicateNames.length > 0) {
+    console.log(Y(`    ⚠ В БД найдено ${duplicateNames.length} дублирующихся названий блюд:`))
+    for (const [name, count] of duplicateNames.slice(0, 10)) {
+      console.log(Y(`    - "${name}" × ${count}`))
+    }
+  } else {
+    console.log(G('    ✓ Дублей в БД нет'))
+  }
+  assert(`Дублей в БД: ${duplicateNames.length}`, duplicateNames.length === 0,
+    `${duplicateNames.length} дублирующихся названий`)
+}
+
+// ── ТЕСТ 13: 100 комбинаций ингредиентов ─────────────────────────────────
+async function test13_hundred_combinations() {
+  console.log('\n' + W('═══ ТЕСТ 13: 100 комбинаций ингредиентов ═══'))
+
+  // Загрузим все ингредиенты (show_in_selector)
+  const { data: allIngs } = await supabase
+    .from('ingredients').select('id, name').eq('show_in_selector', true).limit(150)
+  const selectorIngs = allIngs ?? []
+  if (selectorIngs.length < 5) {
+    console.log(Y('    ⚠ Недостаточно ингредиентов с show_in_selector=true, пропускаем'))
+    return
+  }
+
+  // Заранее подготовленные разнообразные комбо
+  const COMBOS: string[][] = [
+    ['Яйца'], ['Молоко'], ['Гречка'], ['Рис'], ['Макароны'],
+    ['Курица', 'Лук'], ['Говядина', 'Морковь'], ['Рыба', 'Лимон'],
+    ['Яйца', 'Сыр'], ['Яйца', 'Помидоры'], ['Яйца', 'Молоко', 'Мука'],
+    ['Курица', 'Картофель', 'Лук'], ['Говядина', 'Лук', 'Морковь', 'Картофель'],
+    ['Капуста', 'Морковь', 'Лук'], ['Свёкла', 'Капуста', 'Морковь'],
+    ['Творог', 'Яйца', 'Мука', 'Сахар'], ['Сметана', 'Яйца', 'Мука'],
+    ['Сыр', 'Яйца', 'Мука'], ['Пармезан', 'Паста', 'Чеснок'],
+    ['Лосось', 'Лимон', 'Укроп'], ['Тунец', 'Помидоры', 'Огурцы'],
+    ['Картофель'], ['Морковь', 'Лук'], ['Грибы', 'Лук', 'Сметана'],
+    ['Кефир', 'Мука', 'Яйца', 'Сахар'], ['Творог', 'Сметана'],
+    ['Фарш', 'Лук', 'Яйца'], ['Бекон', 'Яйца', 'Хлеб'],
+    ['Курица', 'Рис', 'Морковь', 'Лук'], ['Говядина', 'Рис', 'Лук'],
+    ['Овощи', 'Рис'], ['Грибы', 'Макароны'], ['Сыр', 'Хлеб'],
+    ['Яйца', 'Сыр', 'Ветчина'], ['Курица', 'Грибы', 'Сметана'],
+    ['Говядина', 'Томатная паста', 'Лук'], ['Капуста', 'Картофель'],
+    ['Яйца', 'Шпинат'], ['Брокколи', 'Сыр'], ['Авокадо', 'Яйца'],
+    ['Лосось', 'Рис'], ['Тунец', 'Паста'], ['Фарш', 'Макароны', 'Помидоры'],
+    ['Курица', 'Лимон', 'Чеснок'], ['Говядина', 'Сметана', 'Лук'],
+    ['Яйца', 'Молоко', 'Сахар', 'Ванилин'], ['Мука', 'Масло сливочное', 'Яйца', 'Сахар'],
+    ['Огурцы', 'Помидоры', 'Лук'], ['Капуста', 'Морковь', 'Огурцы'],
+    ['Чечевица', 'Лук', 'Морковь'], ['Нут', 'Чеснок', 'Лимон'],
+    ['Рис', 'Курица', 'Болгарский перец'], ['Паста', 'Томатная паста', 'Чеснок'],
+    ['Картофель', 'Яйца', 'Колбаса'], ['Яйца', 'Молоко', 'Мука', 'Сахар'],
+    ['Курица', 'Кефир'], ['Говядина', 'Чеснок', 'Розмарин'],
+    ['Семга', 'Сливки'], ['Тилапия', 'Лимон', 'Чеснок'],
+    ['Яйца', 'Ветчина', 'Помидоры', 'Сыр'], ['Сыр', 'Сметана', 'Чеснок'],
+    ['Баклажан', 'Помидоры', 'Чеснок'], ['Кабачок', 'Яйца'],
+    ['Арбуз', 'Фета'], ['Яблоки', 'Корица', 'Мука', 'Сахар'],
+    ['Курица', 'Орехи', 'Лук'], ['Говядина', 'Картофель', 'Морковь', 'Лук'],
+    ['Паста', 'Сливки', 'Пармезан'], ['Рис', 'Кокосовое молоко'],
+    ['Фасоль', 'Чеснок', 'Лук'], ['Кукуруза', 'Яйца', 'Мука'],
+    ['Яйца', 'Грибы', 'Лук'], ['Курица', 'Соевый соус', 'Имбирь'],
+    ['Морепродукты', 'Рис'], ['Мидии', 'Чеснок', 'Помидоры'],
+    ['Шоколад', 'Яйца', 'Масло сливочное', 'Сахар'], ['Банан', 'Яйца', 'Мука'],
+    ['Манная крупа', 'Молоко', 'Яйца'], ['Перловка', 'Морковь', 'Лук'],
+    ['Свинина', 'Чеснок', 'Лук'], ['Телятина', 'Сметана'],
+    ['Рыба', 'Картофель', 'Лук'], ['Кролик', 'Морковь', 'Лук'],
+    ['Шпинат', 'Сыр', 'Чеснок'], ['Помидоры', 'Фета', 'Оливки'],
+    ['Гречка', 'Грибы'], ['Рис', 'Яйца', 'Морковь'],
+    ['Яйца', 'Лук', 'Морковь', 'Картофель'], ['Сыр', 'Творог', 'Яйца'],
+    ['Молоко', 'Рис', 'Сахар'], ['Яблоки', 'Мёд', 'Орехи'],
+    ['Клубника', 'Сливки', 'Сахар'], ['Яйца', 'Сметана', 'Мука', 'Сахар'],
+    ['Курица', 'Морковь', 'Сельдерей', 'Лук'], ['Говядина', 'Помидоры', 'Болгарский перец'],
+    ['Картофель', 'Сыр', 'Сметана'], ['Пельмени', 'Сметана'],
+    ['Яйца', 'Помидоры', 'Брынза'], ['Тесто', 'Сыр', 'Ветчина'],
+    ['Лимон', 'Мёд', 'Имбирь'], ['Апельсин', 'Яйца', 'Сахар', 'Мука'],
+  ]
+
+  let comboTotal = 0, comboWithResults = 0, comboWithDuplicates = 0
+  let coverageMismatches = 0
+  const problems: string[] = []
+
+  for (const combo of COMBOS) {
+    // Lookup IDs — skip ingredients not in DB
+    const nameMap = await getIngredientIdsByNames(combo)
+    const ids = [...nameMap.values()].filter(Boolean)
+    if (ids.length === 0) continue
+
+    comboTotal++
+    const results = await findDishes(ids)
+
+    if (results.length > 0) comboWithResults++
+
+    // Check for duplicate names
+    const names = results.map(d => d.name.toLowerCase())
+    const uniqueNames = new Set(names)
+    if (names.length !== uniqueNames.size) {
+      comboWithDuplicates++
+      const dups = names.filter((n, i) => names.indexOf(n) !== i)
+      problems.push(`Дубли при [${combo.slice(0, 3).join(',')}]: ${dups[0]}`)
+    }
+
+    // Check coverage sanity: tier1 should have no missing, tier2 should have coverage 0.5-0.99
+    for (const dish of results) {
+      if (dish.tier === 1 && dish.missing.length > 0) {
+        coverageMismatches++
+        problems.push(`Tier1 с missing: "${dish.name}" missing=[${dish.missing.join(',')}] при [${combo.slice(0,2).join(',')}]`)
+      }
+      if (dish.tier === 2 && (dish.coverage < 0.5 || dish.coverage >= 1.0)) {
+        coverageMismatches++
+        problems.push(`Tier2 coverage=${Math.round(dish.coverage*100)}% у "${dish.name}"`)
+      }
+    }
+  }
+
+  console.log(B(`\n    Комбинаций протестировано: ${comboTotal}`))
+  console.log(B(`    С результатами: ${comboWithResults} (${Math.round(comboWithResults/comboTotal*100)}%)`))
+  console.log(comboWithDuplicates > 0
+    ? R(`    С дублями в выдаче: ${comboWithDuplicates}`)
+    : G(`    Дублей в выдаче: 0`))
+  console.log(coverageMismatches > 0
+    ? R(`    Coverage-ошибок: ${coverageMismatches}`)
+    : G(`    Coverage-ошибок: 0`))
+
+  if (problems.length > 0) {
+    console.log(R('    Проблемы:'))
+    for (const p of problems.slice(0, 10)) console.log(R(`    - ${p}`))
+  }
+
+  assert(`${comboTotal} комбинаций проверено`, comboTotal >= 50, `только ${comboTotal}`)
+  assert('Нет дублей в выдаче ни в одной комбинации', comboWithDuplicates === 0,
+    `${comboWithDuplicates} комбинаций с дублями`)
+  assert('Нет coverage-ошибок (Tier1 без missing, Tier2 в диапазоне 50–99%)',
+    coverageMismatches === 0, `${coverageMismatches} ошибок`)
+}
+
 // ── ИТОГ ──────────────────────────────────────────────────────────────────
 async function main() {
   console.log(W('\n╔═══════════════════════════════════════════════════╗'))
@@ -407,6 +640,9 @@ async function main() {
     await test8_coverage_accuracy()
     await test9_dishes_without_ingredients()
     await test10_recipes_integrity()
+    await test11_fuzzy_matching()
+    await test12_no_duplicate_names()
+    await test13_hundred_combinations()
   } catch (e) {
     console.error(R('\n  FATAL: ' + (e instanceof Error ? e.message : String(e))))
   }
