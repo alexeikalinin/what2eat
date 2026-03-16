@@ -12,10 +12,10 @@ import { AccessTime, People, ShoppingCart, FavoriteBorder, Favorite, CheckCircle
 import { motion } from 'framer-motion'
 import { useState } from 'react'
 import { Dish, Difficulty } from '../../types'
-import { DIFFICULTY_LABELS, DIFFICULTY_COLORS } from '../../utils/constants'
+import { DIFFICULTY_COLORS } from '../../utils/constants'
 import { getDishImageUrl } from '../../utils/imageUtils'
 import { useLanguage } from '../../hooks/useLanguage'
-import { dishName, dishDesc } from '../../utils/lang'
+import { dishName, dishDesc, difficultyLabel } from '../../utils/lang'
 
 interface DishCardProps {
   dish: Dish
@@ -146,7 +146,7 @@ export default function DishCard({ dish, onSelect }: DishCardProps) {
               sx={{ bgcolor: 'rgba(255,255,255,0.8)', color: 'rgba(0,0,0,0.55)', border: '1px solid rgba(255,122,24,0.18)', fontSize: '0.77rem' }}
             />
             <Chip
-              label={DIFFICULTY_LABELS[dish.difficulty]}
+              label={difficultyLabel(dish.difficulty, t)}
               size="small"
               sx={{ bgcolor: getDifficultyColor(dish.difficulty), color: 'white', fontWeight: 700, fontSize: '0.77rem' }}
             />
