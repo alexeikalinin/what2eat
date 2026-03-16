@@ -136,7 +136,7 @@ export default function IngredientsHero({ onPhotoClick, onCameraCapture, preview
 
             <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
               {/* label→input: only reliable pattern for iOS Safari camera capture */}
-              <Box component="label" htmlFor="hero-camera-input" sx={{ display: 'contents' }}>
+              <Box component="label" htmlFor="hero-camera-input" sx={{ display: 'contents' }} onClick={(e) => e.stopPropagation()}>
                 <input
                   id="hero-camera-input"
                   ref={cameraInputRef}
