@@ -2,10 +2,10 @@ import { useState } from 'react'
 import { Box, Typography, Chip, Skeleton } from '@mui/material'
 import { AccessTime, ShoppingCart } from '@mui/icons-material'
 import { Dish } from '../../types'
-import { DIFFICULTY_LABELS, DIFFICULTY_COLORS } from '../../utils/constants'
+import { DIFFICULTY_COLORS } from '../../utils/constants'
 import { getDishImageUrl, getDishSvgFallback } from '../../utils/imageUtils'
 import { useLanguage } from '../../hooks/useLanguage'
-import { dishName, ingredientName } from '../../utils/lang'
+import { dishName, ingredientName, difficultyLabel } from '../../utils/lang'
 
 interface SwipeCardProps {
   dish: Dish
@@ -122,7 +122,7 @@ export default function SwipeCard({ dish, swipeDirection }: SwipeCardProps) {
             }}
           />
           <Chip
-            label={DIFFICULTY_LABELS[dish.difficulty]}
+            label={difficultyLabel(dish.difficulty, t)}
             size="small"
             sx={{
               bgcolor: DIFFICULTY_COLORS[dish.difficulty],

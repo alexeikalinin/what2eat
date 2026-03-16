@@ -127,6 +127,36 @@ export async function estimateCaloriesFromImage(
   return { calories: 0, protein: 0, fat: 0, carbs: 0, description: 'Не удалось определить' }
 }
 
+export async function estimateCaloriesFromRecipe(
+  dishName: string,
+  ingredients: { name: string; quantity: number; unit: string }[]
+): Promise<CalorieEstimate> {
+  const list = ingredients.map((i) => `${i.name} — ${i.quantity} ${i.unit}`).join('\n')
+  const prompt = `Оцени питательную ценность блюда «${dishName}» на одну порцию.
+Ингредиенты:
+${list}
+
+Верни ТОЛЬКО JSON объект в формате:
+{"calories": <число>, "protein": <г>, "fat": <г>, "carbs": <г>, "description": "<краткое описание на русском>"}
+Без пояснений, только JSON.`
+
+  const body = {
+    model: 'gpt-4o-mini',
+    max_tokens: 200,
+    messages: [{ role: 'user', content: prompt }],
+  }
+
+  const data = await callOpenAI('estimate_calories', body)
+  const text: string = (data.choices as { message: { content: string } }[])?.[0]?.message?.content ?? '{}'
+  try {
+    const match = text.match(/\{[\s\S]*\}/)
+    if (match) return JSON.parse(match[0]) as CalorieEstimate
+  } catch {
+    // fall through
+  }
+  return { calories: 0, protein: 0, fat: 0, carbs: 0, description: 'Не удалось определить' }
+}
+
 export async function suggestDishesByIngredients(ingredientNames: string[]): Promise<string[]> {
   if (ingredientNames.length === 0) return []
   const prompt = `Есть продукты: ${ingredientNames.join(', ')}.

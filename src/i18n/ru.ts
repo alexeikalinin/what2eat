@@ -305,6 +305,11 @@ const ru = {
   photo_daily_limit_hint: 'Исчерпан дневной лимит (1 фото). Premium — без ограничений.',
   photo_ai_paywall_reason: 'AI распознавание ингредиентов: 1 фото в день бесплатно. Premium — без ограничений.',
   layout_switch_russian: 'Переключить на Русский',
+  difficulty_easy: 'Легко',
+  difficulty_medium: 'Средне',
+  difficulty_hard: 'Сложно',
+  recipe_calc_calories_auto: 'Считаю…',
+  recipe_calories_auto_hint: 'Оценка по ингредиентам рецепта',
 } as const;
 
 export type TranslationKeys = keyof typeof ru;

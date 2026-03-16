@@ -124,11 +124,11 @@ const DISH_IMAGE_OVERRIDES: { pattern: RegExp; url: string }[] = [
   // Омлет (до общего яиц)
   { pattern: /омлет/i, url: 'https://images.unsplash.com/photo-1510693206972-df098062cb71?w=400&h=520&fit=crop&q=80' },
   // Вареные яйца (до общего яичница)
-  { pattern: /вареные? яйц|яйц.{0,8}вар/i, url: 'https://images.unsplash.com/photo-1474722883778-792e7990302f?w=400&h=520&fit=crop&q=80' },
-  // Яичница с помидорами (до общей яичницы)
-  { pattern: /яичниц.{0,15}помидор|яичниц.{0,15}томат/i, url: 'https://images.unsplash.com/photo-1588166524941-3bf61a9c41db?w=400&h=520&fit=crop&q=80' },
-  // Яичница с колбасой / беконом
-  { pattern: /яичниц.{0,15}колбас|яичниц.{0,15}бекон/i, url: 'https://images.unsplash.com/photo-1476224203421-9ac39bcb3df1?w=400&h=520&fit=crop&q=80' },
+  { pattern: /вареные? яйц|яйц.{0,8}вар/i, url: 'https://images.unsplash.com/photo-1612893770003-5d67c9e39a2a?w=400&h=520&fit=crop&q=80' },
+  // Яичница с помидорами — шакшука (яйца в томатном соусе)
+  { pattern: /яичниц.{0,15}помидор|яичниц.{0,15}томат/i, url: 'https://images.unsplash.com/photo-1590330297626-d7aff25a0431?w=400&h=520&fit=crop&q=80' },
+  // Яичница с колбасой / беконом — английский завтрак
+  { pattern: /яичниц.{0,15}колбас|яичниц.{0,15}бекон/i, url: 'https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?w=400&h=520&fit=crop&q=80' },
   // Яичница с грибами
   { pattern: /яичниц.{0,15}гриб/i, url: 'https://images.unsplash.com/photo-1607532941433-304659e8198a?w=400&h=520&fit=crop&q=80' },
   // Яичница / глазунья (общая)

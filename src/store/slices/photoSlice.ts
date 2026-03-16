@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
-import { detectIngredientsFromImage, estimateCaloriesFromImage, CalorieEstimate } from '../../services/openai'
+import { detectIngredientsFromImage, estimateCaloriesFromImage, estimateCaloriesFromRecipe, CalorieEstimate } from '../../services/openai'
 
 interface PhotoState {
   status: 'idle' | 'analyzing' | 'done' | 'error'
@@ -26,6 +26,13 @@ export const analyzeCalories = createAsyncThunk(
   'photo/analyzeCalories',
   async ({ base64, mimeType }: { base64: string; mimeType: string }) => {
     return await estimateCaloriesFromImage(base64, mimeType)
+  }
+)
+
+export const analyzeCaloriesFromRecipe = createAsyncThunk(
+  'photo/analyzeCaloriesFromRecipe',
+  async ({ dishName, ingredients }: { dishName: string; ingredients: { name: string; quantity: number; unit: string }[] }) => {
+    return await estimateCaloriesFromRecipe(dishName, ingredients)
   }
 )
 
@@ -68,6 +75,19 @@ const photoSlice = createSlice({
         state.calorieEstimate = action.payload
       })
       .addCase(analyzeCalories.rejected, (state, action) => {
+        state.status = 'error'
+        state.error = action.error.message || 'Ошибка подсчёта калорий'
+      })
+      .addCase(analyzeCaloriesFromRecipe.pending, (state) => {
+        state.status = 'analyzing'
+        state.error = null
+        state.calorieEstimate = null
+      })
+      .addCase(analyzeCaloriesFromRecipe.fulfilled, (state, action) => {
+        state.status = 'done'
+        state.calorieEstimate = action.payload
+      })
+      .addCase(analyzeCaloriesFromRecipe.rejected, (state, action) => {
         state.status = 'error'
         state.error = action.error.message || 'Ошибка подсчёта калорий'
       })

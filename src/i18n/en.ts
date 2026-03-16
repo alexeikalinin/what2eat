@@ -266,6 +266,11 @@ const en = {
   photo_daily_limit_hint: 'Daily limit reached (1 photo). Premium — unlimited.',
   photo_ai_paywall_reason: 'AI ingredient recognition: 1 photo per day for free. Premium — unlimited.',
   layout_switch_russian: 'Switch to Russian',
+  difficulty_easy: 'Easy',
+  difficulty_medium: 'Medium',
+  difficulty_hard: 'Hard',
+  recipe_calc_calories_auto: 'Calculating…',
+  recipe_calories_auto_hint: 'Estimated from recipe ingredients',
 } as const;
 
 export default en;

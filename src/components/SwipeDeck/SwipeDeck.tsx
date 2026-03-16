@@ -46,6 +46,8 @@ export default function SwipeDeck({ dishes, loading = false, onDishSelect, onCom
   const [warnSnackbarOpen, setWarnSnackbarOpen] = useState(false)
   const [warnRemaining, setWarnRemaining] = useState(3)
   const warnShown = useRef(false)
+  const [likeAnimKey, setLikeAnimKey] = useState(0)
+  const [likeAnimating, setLikeAnimating] = useState(false)
 
   const { canSwipe, swipesRemaining, trackLocalSwipe, isPremium, DAILY_SWIPE_LIMIT } = usePlan()
   const { openAuth } = useModalContext()
@@ -86,7 +88,11 @@ export default function SwipeDeck({ dishes, loading = false, onDishSelect, onCom
       dispatch(incrementSwipeUsage())
       trackLocalSwipe()
       setSwipeDirection(prev => ({ ...prev, [dishId]: dir }))
-      // Warn when few swipes left (trackLocalSwipe уже вызван, swipesRemaining() = оставшиеся ПОСЛЕ этого свайпа)
+      if (dir === 'right') {
+        setLikeAnimating(true)
+        setLikeAnimKey(k => k + 1)
+      }
+      // Warn when few swipes left (trackLocalSwipe уже вызван, swipesRemaining() = оставшиеся ПОСЛЕ этого свайпа) (trackLocalSwipe уже вызван, swipesRemaining() = оставшиеся ПОСЛЕ этого свайпа)
       const remaining = swipesRemaining()
       if (!warnShown.current && remaining <= 3 && remaining > 0) {
         warnShown.current = true
@@ -104,6 +110,10 @@ export default function SwipeDeck({ dishes, loading = false, onDishSelect, onCom
     }
     const dishId = dishes[currentIndex]?.id
     if (dishId) setSwipeDirection(prev => ({ ...prev, [dishId]: dir }))
+    if (dir === 'right') {
+      setLikeAnimating(true)
+      setLikeAnimKey(k => k + 1)
+    }
     const card = cardRefsStore.current[currentIndex]
     if (card) card.swipe(dir)
   }
@@ -435,6 +445,28 @@ export default function SwipeDeck({ dishes, loading = false, onDishSelect, onCom
           </motion.div>
         )}
       </Box>
+
+      {/* Flying heart animation on like */}
+      {likeAnimating && (
+        <motion.div
+          key={likeAnimKey}
+          initial={{ opacity: 1, x: 0, y: 0, scale: 1.4 }}
+          animate={{ opacity: 0, x: 160, y: -340, scale: 0.6 }}
+          transition={{ duration: 0.75, ease: 'easeOut' }}
+          onAnimationComplete={() => setLikeAnimating(false)}
+          style={{
+            position: 'fixed',
+            bottom: '28%',
+            left: '50%',
+            fontSize: 38,
+            zIndex: 9999,
+            pointerEvents: 'none',
+            userSelect: 'none',
+          }}
+        >
+          ❤️
+        </motion.div>
+      )}
 
       <PaywallModal
         open={paywallOpen}

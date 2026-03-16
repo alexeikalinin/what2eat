@@ -373,6 +373,8 @@ export default function PhotoUpload({ onIngredientsConfirmed, onBack, initialFil
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2.5 }}>
                   {[...detectedIngredientNames, ...customIngredients.filter(n => !detectedIngredientNames.includes(n))].map((name) => {
                     const isSelected = selectedNames.has(name)
+                    const matchedIng = ingredients.find(i => i.name.toLowerCase() === name.toLowerCase())
+                    const displayName = matchedIng ? ingredientName(matchedIng, lang) : name
                     return (
                       <motion.div
                         key={name}
@@ -381,7 +383,7 @@ export default function PhotoUpload({ onIngredientsConfirmed, onBack, initialFil
                         transition={{ type: 'spring', stiffness: 400, damping: 20 }}
                       >
                         <Chip
-                          label={name}
+                          label={displayName}
                           onClick={() => toggleName(name)}
                           onDelete={(e) => {
                             e.stopPropagation()
