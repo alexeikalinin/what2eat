@@ -14,15 +14,6 @@ export default function IngredientsHero({ onPhotoClick, onCameraCapture, preview
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const { t } = useLanguage()
 
-  const handleCameraClick = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    if (onCameraCapture) {
-      cameraInputRef.current?.click()
-    } else {
-      onPhotoClick()
-    }
-  }
-
   const handleCameraFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file && onCameraCapture) {
@@ -144,38 +135,40 @@ export default function IngredientsHero({ onPhotoClick, onCameraCapture, preview
             </Typography>
 
             <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
-              {/* Hidden camera input */}
-              {/* Visually hidden — display:none breaks onChange on iOS Safari 17+ with capture */}
-              <input
-                ref={cameraInputRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                style={{ position: 'fixed', top: '-200px', opacity: 0, width: '1px', height: '1px' }}
-                onChange={handleCameraFile}
-              />
-              <Button
-                variant="contained"
-                startIcon={<CameraAlt sx={{ fontSize: 18 }} />}
-                onClick={handleCameraClick}
-                sx={{
-                  bgcolor: 'white',
-                  color: '#FF7A18',
-                  fontWeight: 700,
-                  fontSize: '0.875rem',
-                  borderRadius: 3,
-                  px: 2.5,
-                  py: 1,
-                  background: 'white',
-                  boxShadow: '0 2px 12px rgba(0,0,0,0.15)',
-                  '&:hover': {
-                    background: '#FFF5EE',
-                    boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
-                  },
-                }}
-              >
-                {t('hero_open_camera')}
-              </Button>
+              {/* label→input: only reliable pattern for iOS Safari camera capture */}
+              <Box component="label" htmlFor="hero-camera-input" sx={{ display: 'contents' }}>
+                <input
+                  id="hero-camera-input"
+                  ref={cameraInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  style={{ display: 'none' }}
+                  onChange={handleCameraFile}
+                />
+                <Button
+                  component="span"
+                  variant="contained"
+                  startIcon={<CameraAlt sx={{ fontSize: 18 }} />}
+                  sx={{
+                    bgcolor: 'white',
+                    color: '#FF7A18',
+                    fontWeight: 700,
+                    fontSize: '0.875rem',
+                    borderRadius: 3,
+                    px: 2.5,
+                    py: 1,
+                    background: 'white',
+                    boxShadow: '0 2px 12px rgba(0,0,0,0.15)',
+                    '&:hover': {
+                      background: '#FFF5EE',
+                      boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
+                    },
+                  }}
+                >
+                  {t('hero_open_camera')}
+                </Button>
+              </Box>
               <Button
                 variant="text"
                 startIcon={<PhotoLibrary sx={{ fontSize: 16 }} />}

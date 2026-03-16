@@ -8,7 +8,6 @@ import {
   Chip,
   CircularProgress,
   Alert,
-  Paper,
   Menu,
   MenuItem,
   ListItemText,
@@ -281,12 +280,18 @@ export default function PhotoUpload({ onIngredientsConfirmed, onBack, initialFil
           />
         </Tabs>
 
-        {/* Upload zone */}
-        <Paper
-          elevation={0}
+        {/* Upload zone — label wraps input for reliable iOS Safari file selection */}
+        <Box
+          component="label"
+          htmlFor="photo-upload-input"
           onDrop={handleDrop}
           onDragOver={(e) => e.preventDefault()}
           sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 2,
             border: '2px dashed #FFD0A0',
             borderRadius: 4,
             p: 3,
@@ -297,20 +302,15 @@ export default function PhotoUpload({ onIngredientsConfirmed, onBack, initialFil
             transition: 'all 0.2s ease',
             '&:hover': { bgcolor: '#FFF3E0', borderColor: '#FF7A18' },
             minHeight: previewUrl ? 'auto' : 200,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 2,
           }}
-          onClick={() => fileInputRef.current?.click()}
         >
-          {/* Visually hidden — display:none breaks onChange on iOS Safari 17+ */}
+          {/* iOS Safari requires label→input pattern; programmatic .click() is unreliable */}
           <input
+            id="photo-upload-input"
             ref={fileInputRef}
             type="file"
             accept="image/*,.heic,.heif"
-            style={{ position: 'fixed', top: '-200px', opacity: 0, width: '1px', height: '1px' }}
+            style={{ display: 'none' }}
             onChange={handleFileInput}
           />
           {previewUrl ? (
@@ -344,7 +344,7 @@ export default function PhotoUpload({ onIngredientsConfirmed, onBack, initialFil
               </Box>
             </>
           )}
-        </Paper>
+        </Box>
 
         {status === 'analyzing' && (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2.5, p: 2, bgcolor: '#FFF8F0', borderRadius: 3 }}>
