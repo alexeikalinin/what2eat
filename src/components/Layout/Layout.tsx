@@ -11,6 +11,7 @@ import {
 import { ReactNode } from 'react'
 import { useAppSelector, useAppDispatch } from '../../hooks/redux'
 import { logout } from '../../store/slices/userSlice'
+import { useLanguage } from '../../hooks/useLanguage'
 
 interface LayoutProps {
   children: ReactNode
@@ -29,6 +30,7 @@ export default function Layout({
   const dispatch = useAppDispatch()
   const { user, plan } = useAppSelector((state) => state.user)
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null)
+  const { lang, toggleLanguage, t } = useLanguage()
 
   const isPremium = plan === 'premium'
   const isLoading = plan === 'loading'
@@ -101,11 +103,27 @@ export default function Layout({
             </Typography>
           </Box>
 
+          {/* Language toggle */}
+          <Tooltip title={lang === 'ru' ? 'Switch to English' : t('layout_switch_russian')}>
+            <IconButton
+              onClick={toggleLanguage}
+              size="small"
+              sx={{
+                color: 'rgba(0,0,0,0.4)',
+                '&:hover': { color: '#FF7A18', background: 'rgba(255,122,24,0.06)' },
+              }}
+            >
+              <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, lineHeight: 1 }}>
+                {lang === 'ru' ? 'EN' : 'RU'}
+              </Typography>
+            </IconButton>
+          </Tooltip>
+
           {/* Favorites badge */}
           {likedCount != null && likedCount > 0 && onFavoritesClick && (
             <IconButton
               onClick={onFavoritesClick}
-              aria-label="Избранные блюда"
+              aria-label={t('layout_favorites')}
               sx={{
                 color: 'rgba(0,0,0,0.45)',
                 mr: 0.5,
@@ -131,7 +149,7 @@ export default function Layout({
 
           {/* Planner button */}
           {onPlannerClick && (
-            <Tooltip title={plannerLocked ? 'Только Premium' : 'Планировщик'}>
+            <Tooltip title={plannerLocked ? t('layout_planner_premium_only') : t('layout_planner')}>
               <Button
                 onClick={onPlannerClick}
                 size="small"
@@ -151,7 +169,7 @@ export default function Layout({
                 }}
               >
                 <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
-                  Планировщик
+                  {t('layout_planner')}
                 </Box>
               </Button>
             </Tooltip>
@@ -161,7 +179,7 @@ export default function Layout({
           {!isLoading && (
             user ? (
               <>
-                <Tooltip title={isPremium ? 'Premium аккаунт' : 'Free аккаунт — нажмите для настроек'}>
+                <Tooltip title={isPremium ? t('layout_premium_account') : t('layout_free_account')}>
                   <Box
                     onClick={handleAvatarClick}
                     sx={{ ml: 0.5, position: 'relative', cursor: 'pointer' }}
@@ -242,7 +260,7 @@ export default function Layout({
                         <AutoAwesome sx={{ fontSize: 18, color: '#FF7A18' }} />
                       </ListItemIcon>
                       <ListItemText
-                        primary="Перейти на Premium"
+                        primary={t('layout_go_premium')}
                         primaryTypographyProps={{ fontWeight: 700, fontSize: '0.875rem', color: '#FF7A18' }}
                       />
                     </MenuItem>
@@ -256,7 +274,7 @@ export default function Layout({
                       <Logout sx={{ fontSize: 18, color: 'rgba(0,0,0,0.5)' }} />
                     </ListItemIcon>
                     <ListItemText
-                      primary="Выйти"
+                      primary={t('layout_logout')}
                       primaryTypographyProps={{ fontSize: '0.875rem', color: 'rgba(0,0,0,0.7)' }}
                     />
                   </MenuItem>
@@ -271,7 +289,7 @@ export default function Layout({
                   color: 'rgba(0,0,0,0.4)',
                   '&:hover': { color: '#FF7A18', background: 'rgba(255,122,24,0.06)' },
                 }}
-                aria-label="Войти"
+                aria-label={t('layout_login')}
               >
                 <Login fontSize="small" />
               </IconButton>

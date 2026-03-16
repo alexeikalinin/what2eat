@@ -5,7 +5,7 @@ export async function getAllIngredients(): Promise<Ingredient[]> {
   if (!isSupabaseConfigured()) return []
   const { data, error } = await supabase
     .from('ingredients')
-    .select('id, name, category, image_url, show_in_selector')
+    .select('id, name, name_en, category, image_url, show_in_selector')
     .order('category')
     .order('name')
 
@@ -17,6 +17,7 @@ export async function getAllIngredients(): Promise<Ingredient[]> {
   return (data ?? []).map((row) => ({
     id: row.id as number,
     name: row.name as string,
+    name_en: (row.name_en as string) || null,
     category: row.category as Ingredient['category'],
     image_url: (row.image_url as string) || null,
     show_in_selector: Boolean(row.show_in_selector),
@@ -29,7 +30,7 @@ export async function getIngredientsByCategory(
   if (!isSupabaseConfigured()) return []
   const { data, error } = await supabase
     .from('ingredients')
-    .select('id, name, category, image_url, show_in_selector')
+    .select('id, name, name_en, category, image_url, show_in_selector')
     .eq('category', category)
     .order('name')
 
@@ -41,6 +42,7 @@ export async function getIngredientsByCategory(
   return (data ?? []).map((row) => ({
     id: row.id as number,
     name: row.name as string,
+    name_en: (row.name_en as string) || null,
     category: row.category as Ingredient['category'],
     image_url: (row.image_url as string) || null,
     show_in_selector: Boolean(row.show_in_selector),
@@ -51,7 +53,7 @@ export async function searchIngredients(query: string): Promise<Ingredient[]> {
   if (!isSupabaseConfigured()) return []
   const { data, error } = await supabase
     .from('ingredients')
-    .select('id, name, category, image_url, show_in_selector')
+    .select('id, name, name_en, category, image_url, show_in_selector')
     .ilike('name', `%${query}%`)
     .order('name')
 
@@ -63,6 +65,7 @@ export async function searchIngredients(query: string): Promise<Ingredient[]> {
   return (data ?? []).map((row) => ({
     id: row.id as number,
     name: row.name as string,
+    name_en: (row.name_en as string) || null,
     category: row.category as Ingredient['category'],
     image_url: (row.image_url as string) || null,
     show_in_selector: Boolean(row.show_in_selector),

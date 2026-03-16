@@ -10,6 +10,8 @@ import { RandomizerFocus } from '../../services/dishes'
 import { usePlan } from '../../hooks/usePlan'
 import PaywallModal from '../PaywallModal'
 import { useModalContext } from '../../contexts/ModalContext'
+import PremiumHint from '../PremiumHint'
+import { useLanguage } from '../../hooks/useLanguage'
 
 interface Props {
   onStart: () => void
@@ -24,6 +26,7 @@ export default function RandomizerFocusScreen({ onStart, onBack }: Props) {
   const [paywallOpen, setPaywallOpen] = useState(false)
 
   const isFullRandomizer = canUseFullRandomizer()
+  const { t } = useLanguage()
 
   const update = (patch: Partial<RandomizerFocus>) =>
     dispatch(setFocus({ ...focus, ...patch }))
@@ -39,36 +42,36 @@ export default function RandomizerFocusScreen({ onStart, onBack }: Props) {
   // Free: только кухня + тип блюда. Premium: все 5 осей
   const freeSections = [
     {
-      label: 'Кухня', field: 'cuisine' as const, isPremium: false,
+      label: t('randomizer_cuisine'), field: 'cuisine' as const, isPremium: false,
       options: [
-        { v: 'any', l: 'Любая' }, { v: 'russian', l: 'Русская' },
-        { v: 'italian', l: 'Итальянская' }, { v: 'asian', l: 'Азиатская' },
-        { v: 'eastern_european', l: 'Восточноевропейская' },
-        { v: 'mediterranean', l: 'Средиземноморская' },
-        { v: 'georgian', l: 'Грузинская' },
-        { v: 'mexican', l: 'Мексиканская' },
-        { v: 'french', l: 'Французская' },
+        { v: 'any', l: t('randomizer_cuisine_any') }, { v: 'russian', l: t('quick_cuisine_russian') },
+        { v: 'italian', l: t('quick_cuisine_italian') }, { v: 'asian', l: t('quick_cuisine_asian') },
+        { v: 'eastern_european', l: t('quick_cuisine_eastern_european') },
+        { v: 'mediterranean', l: t('quick_cuisine_mediterranean') },
+        { v: 'georgian', l: t('quick_cuisine_georgian') },
+        { v: 'mexican', l: t('quick_cuisine_mexican') },
+        { v: 'french', l: t('quick_cuisine_french') },
       ],
     },
     {
-      label: 'Приём пищи', field: 'mealType' as const, isPremium: false,
+      label: t('randomizer_meal_type'), field: 'mealType' as const, isPremium: false,
       options: [
-        { v: 'any', l: 'Любой' }, { v: 'breakfast', l: 'Завтрак' },
-        { v: 'lunch', l: 'Обед' }, { v: 'dinner', l: 'Ужин' }, { v: 'snack', l: 'Перекус' },
+        { v: 'any', l: t('randomizer_meal_any') }, { v: 'breakfast', l: t('randomizer_meal_breakfast') },
+        { v: 'lunch', l: t('randomizer_meal_lunch') }, { v: 'dinner', l: t('randomizer_meal_dinner') }, { v: 'snack', l: t('randomizer_meal_snack') },
       ],
     },
     {
-      label: 'Время', field: 'cookingTime' as const, isPremium: true,
+      label: t('randomizer_time'), field: 'cookingTime' as const, isPremium: true,
       options: [
-        { v: 'any', l: 'Любое' }, { v: 'quick', l: 'До 20 мин' },
-        { v: 'medium', l: '21–45 мин' }, { v: 'slow', l: '45+ мин' },
+        { v: 'any', l: t('randomizer_time_any') }, { v: 'quick', l: t('randomizer_time_quick') },
+        { v: 'medium', l: t('randomizer_time_medium') }, { v: 'slow', l: t('randomizer_time_slow') },
       ],
     },
     {
-      label: 'Сложность', field: 'difficulty' as const, isPremium: true,
+      label: t('randomizer_difficulty'), field: 'difficulty' as const, isPremium: true,
       options: [
-        { v: 'any', l: 'Любая' }, { v: 'easy', l: 'Просто' },
-        { v: 'medium', l: 'Средне' }, { v: 'hard', l: 'Сложно' },
+        { v: 'any', l: t('randomizer_diff_any') }, { v: 'easy', l: t('randomizer_diff_easy') },
+        { v: 'medium', l: t('randomizer_diff_medium') }, { v: 'hard', l: t('randomizer_diff_hard') },
       ],
     },
   ]
@@ -83,10 +86,10 @@ export default function RandomizerFocusScreen({ onStart, onBack }: Props) {
         <Box sx={{ pb: 4 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, gap: 1 }}>
             <Button startIcon={<ArrowBack />} onClick={onBack} size="small" sx={{ color: 'rgba(0,0,0,0.45)' }}>
-              Назад
+              {t('back')}
             </Button>
             <Typography variant="h5" sx={{ flex: 1, textAlign: 'center', fontWeight: 700, color: '#1A1A1A' }}>
-              🎲 Настройка
+              🎲 {t('randomizer_title')}
             </Typography>
           </Box>
 
@@ -122,7 +125,7 @@ export default function RandomizerFocusScreen({ onStart, onBack }: Props) {
                       </Typography>
                     )}
                   </Box>
-                  <Tooltip title={locked ? 'Только Premium — нажмите, чтобы узнать больше' : ''} placement="top">
+                  <Tooltip title={locked ? t('randomizer_premium_tooltip') : ''} placement="top">
                     <Box sx={{ opacity: locked ? 0.45 : 1, pointerEvents: locked ? 'none' : 'auto' }}>
                       <ToggleButtonGroup
                         value={focus[section.field]}
@@ -173,7 +176,7 @@ export default function RandomizerFocusScreen({ onStart, onBack }: Props) {
                     disabled={!isFullRandomizer}
                   />
                 }
-                label={<Typography variant="body2" sx={{ fontWeight: 500, color: '#1A1A1A' }}>Только вегетарианское</Typography>}
+                label={<Typography variant="body2" sx={{ fontWeight: 500, color: '#1A1A1A' }}>{t('randomizer_vegetarian_only')}</Typography>}
               />
             </Box>
           </Paper>
@@ -187,9 +190,19 @@ export default function RandomizerFocusScreen({ onStart, onBack }: Props) {
               fullWidth
               sx={{ py: 1.75, fontSize: '1rem', borderRadius: 3 }}
             >
-              Поехали!
+              {t('randomizer_go')}
             </Button>
           </motion.div>
+
+          {!isFullRandomizer && (
+            <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
+              <PremiumHint
+                variant="chip"
+                text={t('randomizer_hint')}
+                paywallReason={t('randomizer_premium_reason')}
+              />
+            </Box>
+          )}
         </Box>
       </motion.div>
 
@@ -197,7 +210,7 @@ export default function RandomizerFocusScreen({ onStart, onBack }: Props) {
         open={paywallOpen}
         onClose={() => setPaywallOpen(false)}
         onLoginRequired={openAuth}
-        reason="Рандомайзер по времени, сложности и вегетарианским блюдам — только в Premium."
+        reason={t('randomizer_premium_reason')}
       />
     </>
   )

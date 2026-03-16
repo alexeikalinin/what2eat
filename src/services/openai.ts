@@ -10,39 +10,50 @@ export interface CalorieEstimate {
 
 const DIRECT_API_URL = 'https://api.openai.com/v1/chat/completions'
 
-/** Возвращает заголовки для запроса к OpenAI — через прокси если есть Supabase, иначе напрямую */
-async function getOpenAIHeaders(): Promise<{ url: string; headers: Record<string, string>; useProxy: boolean }> {
-  const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL as string | undefined)?.replace(/\s/g, '')
-  if (supabaseUrl) {
-    const { data } = await supabase.auth.getSession()
-    const token = data?.session?.access_token
-    if (token) {
-      return {
-        url: `${supabaseUrl}/functions/v1/openai-proxy`,
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        useProxy: true,
-      }
-    }
-  }
+/** Проверяет залогинен ли пользователь (валидный токен на сервере) */
+async function isUserLoggedIn(): Promise<boolean> {
+  const { data: { user } } = await supabase.auth.getUser()
+  return !!user
+}
 
-  // Фолбэк: прямой вызов (только если задан VITE_OPENAI_API_KEY)
+/**
+ * Вызов OpenAI через Supabase Edge Function прокси (для залогиненных пользователей).
+ * supabase.functions.invoke() автоматически добавляет правильные Authorization и apikey заголовки.
+ */
+async function invokeProxy(action: string, openaiBody: Record<string, unknown>): Promise<Record<string, unknown>> {
+  const { data, error } = await supabase.functions.invoke('openai-proxy', {
+    headers: { 'X-Action': action },
+    body: { ...openaiBody, action },
+  })
+  if (error) throw new Error(`Proxy error: ${error.message}`)
+  return data as Record<string, unknown>
+}
+
+/**
+ * Прямой вызов OpenAI API (для гостей с VITE_OPENAI_API_KEY).
+ */
+async function callDirect(openaiBody: Record<string, unknown>): Promise<Record<string, unknown>> {
   const key = import.meta.env.VITE_OPENAI_API_KEY as string | undefined
-  if (!key) {
-    throw new Error(
-      'Для AI функций нужен аккаунт (войдите) или переменная VITE_OPENAI_API_KEY.'
-    )
+  if (!key) throw new Error('Для AI функций войдите в аккаунт или задайте VITE_OPENAI_API_KEY.')
+
+  const response = await fetch(DIRECT_API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
+    body: JSON.stringify(openaiBody),
+  })
+  if (!response.ok) {
+    const err = await response.text()
+    throw new Error(`OpenAI API error: ${response.status} — ${err}`)
   }
-  return {
-    url: DIRECT_API_URL,
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${key}`,
-    },
-    useProxy: false,
+  return response.json() as Promise<Record<string, unknown>>
+}
+
+/** Универсальный вызов: прокси для залогиненных, прямой для гостей */
+async function callOpenAI(action: string, openaiBody: Record<string, unknown>): Promise<Record<string, unknown>> {
+  if (import.meta.env.VITE_SUPABASE_URL && await isUserLoggedIn()) {
+    return invokeProxy(action, openaiBody)
   }
+  return callDirect(openaiBody)
 }
 
 export async function detectIngredientsFromImage(
@@ -58,37 +69,22 @@ ${ingredientNames.join(', ')}
 Пример: ["Курица", "Морковь", "Молоко"]
 Если ничего не найдено, верни: []`
 
-  const { url, headers } = await getOpenAIHeaders()
-
-  const response = await fetch(url, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({
-      model: 'gpt-4o',
-      max_tokens: 300,
-      action: 'detect_ingredients',
-      messages: [
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'image_url',
-              image_url: { url: `data:${mimeType};base64,${base64}`, detail: 'low' },
-            },
-            { type: 'text', text: prompt },
-          ],
-        },
-      ],
-    }),
-  })
-
-  if (!response.ok) {
-    const err = await response.text()
-    throw new Error(`OpenAI API error: ${response.status} — ${err}`)
+  const body = {
+    model: 'gpt-4o',
+    max_tokens: 300,
+    messages: [
+      {
+        role: 'user',
+        content: [
+          { type: 'image_url', image_url: { url: `data:${mimeType};base64,${base64}`, detail: 'low' } },
+          { type: 'text', text: prompt },
+        ],
+      },
+    ],
   }
 
-  const data = await response.json()
-  const text: string = data.choices?.[0]?.message?.content ?? '[]'
+  const data = await callOpenAI('detect_ingredients', body)
+  const text: string = (data.choices as { message: { content: string } }[])?.[0]?.message?.content ?? '[]'
   try {
     const match = text.match(/\[[\s\S]*\]/)
     return match ? (JSON.parse(match[0]) as string[]) : []
@@ -106,37 +102,22 @@ export async function estimateCaloriesFromImage(
 {"calories": <число>, "protein": <г>, "fat": <г>, "carbs": <г>, "description": "<краткое описание блюда на русском>"}
 Без пояснений, только JSON.`
 
-  const { url, headers } = await getOpenAIHeaders()
-
-  const response = await fetch(url, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({
-      model: 'gpt-4o',
-      max_tokens: 200,
-      action: 'estimate_calories',
-      messages: [
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'image_url',
-              image_url: { url: `data:${mimeType};base64,${base64}`, detail: 'low' },
-            },
-            { type: 'text', text: prompt },
-          ],
-        },
-      ],
-    }),
-  })
-
-  if (!response.ok) {
-    const err = await response.text()
-    throw new Error(`OpenAI API error: ${response.status} — ${err}`)
+  const body = {
+    model: 'gpt-4o',
+    max_tokens: 200,
+    messages: [
+      {
+        role: 'user',
+        content: [
+          { type: 'image_url', image_url: { url: `data:${mimeType};base64,${base64}`, detail: 'low' } },
+          { type: 'text', text: prompt },
+        ],
+      },
+    ],
   }
 
-  const data = await response.json()
-  const text: string = data.choices?.[0]?.message?.content ?? '{}'
+  const data = await callOpenAI('estimate_calories', body)
+  const text: string = (data.choices as { message: { content: string } }[])?.[0]?.message?.content ?? '{}'
   try {
     const match = text.match(/\{[\s\S]*\}/)
     if (match) return JSON.parse(match[0]) as CalorieEstimate
@@ -146,9 +127,6 @@ export async function estimateCaloriesFromImage(
   return { calories: 0, protein: 0, fat: 0, carbs: 0, description: 'Не удалось определить' }
 }
 
-/**
- * Предлагает 3–5 блюд по списку ингредиентов (когда в базе ничего не нашли).
- */
 export async function suggestDishesByIngredients(ingredientNames: string[]): Promise<string[]> {
   if (ingredientNames.length === 0) return []
   const prompt = `Есть продукты: ${ingredientNames.join(', ')}.
@@ -157,20 +135,13 @@ export async function suggestDishesByIngredients(ingredientNames: string[]): Pro
 Пример: ["Яичница с сыром", "Омлет с овощами"]`
 
   try {
-    const { url, headers } = await getOpenAIHeaders()
-    const response = await fetch(url, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        max_tokens: 150,
-        action: 'suggest_dishes',
-        messages: [{ role: 'user', content: prompt }],
-      }),
-    })
-    if (!response.ok) return []
-    const data = await response.json()
-    const text: string = data.choices?.[0]?.message?.content ?? '[]'
+    const body = {
+      model: 'gpt-4o-mini',
+      max_tokens: 150,
+      messages: [{ role: 'user', content: prompt }],
+    }
+    const data = await callOpenAI('suggest_dishes', body)
+    const text: string = (data.choices as { message: { content: string } }[])?.[0]?.message?.content ?? '[]'
     const match = text.match(/\[[\s\S]*?\]/)
     if (!match) return []
     const arr = JSON.parse(match[0]) as unknown

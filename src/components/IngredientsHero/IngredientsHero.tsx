@@ -2,6 +2,7 @@ import { useRef } from 'react'
 import { Box, Typography, Button } from '@mui/material'
 import { CameraAlt, PhotoLibrary } from '@mui/icons-material'
 import { motion } from 'framer-motion'
+import { useLanguage } from '../../hooks/useLanguage'
 
 interface IngredientsHeroProps {
   onPhotoClick: () => void
@@ -11,6 +12,7 @@ interface IngredientsHeroProps {
 
 export default function IngredientsHero({ onPhotoClick, onCameraCapture, previewImageUrl }: IngredientsHeroProps) {
   const cameraInputRef = useRef<HTMLInputElement>(null)
+  const { t } = useLanguage()
 
   const handleCameraClick = (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -108,7 +110,7 @@ export default function IngredientsHero({ onPhotoClick, onCameraCapture, preview
               <Box
                 component="img"
                 src={previewImageUrl}
-                alt="Предпросмотр"
+                alt={t('hero_preview')}
                 sx={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
               />
             </Box>
@@ -127,7 +129,7 @@ export default function IngredientsHero({ onPhotoClick, onCameraCapture, preview
                 mb: 0.75,
               }}
             >
-              Сфотографируйте холодильник
+              {t('hero_photo_cta')}
             </Typography>
             <Typography
               variant="body2"
@@ -137,7 +139,7 @@ export default function IngredientsHero({ onPhotoClick, onCameraCapture, preview
                 mb: 2.5,
               }}
             >
-              AI найдёт ингредиенты и предложит блюда
+              {t('hero_photo_sub')}
             </Typography>
 
             <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
@@ -170,7 +172,7 @@ export default function IngredientsHero({ onPhotoClick, onCameraCapture, preview
                   },
                 }}
               >
-                Открыть камеру
+                {t('hero_open_camera')}
               </Button>
               <Button
                 variant="text"
@@ -189,7 +191,7 @@ export default function IngredientsHero({ onPhotoClick, onCameraCapture, preview
                   },
                 }}
               >
-                Загрузить фото
+                {t('hero_upload_photo')}
               </Button>
             </Box>
           </Box>

@@ -303,7 +303,12 @@ export function getDishSvgFallback(dishName: string): string {
 
 // Генерация цветов для placeholder изображений на основе названия блюда
 export function getDishImageUrl(dishName: string, imageUrl: string | null | undefined): string {
-  // Сначала проверяем keyword override — он точнее DB значений
+  // Supabase Storage (кастомные DALL-E) — всегда приоритет над overrides
+  if (imageUrl && imageUrl.includes('supabase')) {
+    return imageUrl
+  }
+
+  // Keyword override точнее общих Unsplash URL из DB
   for (const { pattern, url } of DISH_IMAGE_OVERRIDES) {
     if (pattern.test(dishName)) return url
   }

@@ -27,6 +27,8 @@ import { prepareImageForApi, convertHeicToJpegFile, isHeic } from '../../utils/i
 import CalorieCard from '../CalorieCard'
 import { usePlan } from '../../hooks/usePlan'
 import { useModalContext } from '../../contexts/ModalContext'
+import { useLanguage } from '../../hooks/useLanguage'
+import { recipeInstructions, recipeTitle } from '../../utils/lang'
 
 interface RecipeViewProps {
   onBack: () => void
@@ -41,6 +43,7 @@ export default function RecipeView({ onBack }: RecipeViewProps) {
 
   const { isPremium } = usePlan()
   const { openPaywall } = useModalContext()
+  const { lang, t } = useLanguage()
   const [calorieOpen, setCalorieOpen] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -65,13 +68,13 @@ export default function RecipeView({ onBack }: RecipeViewProps) {
     let fileToUse = file
     if (isHeic(file)) {
       try { fileToUse = await convertHeicToJpegFile(file) }
-      catch { setUploadError('Не удалось конвертировать HEIC. Попробуйте JPEG.'); return }
+      catch { setUploadError(t('recipe_heic_error')); return }
     }
     try {
       const { base64, mimeType } = await prepareImageForApi(fileToUse)
       dispatch(analyzeCalories({ base64, mimeType }))
     } catch {
-      setUploadError('Не удалось прочитать фото.')
+      setUploadError(t('recipe_photo_read_error'))
     }
   }
 
@@ -83,7 +86,7 @@ export default function RecipeView({ onBack }: RecipeViewProps) {
     return (
       <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', my: 8, gap: 2 }}>
         <CircularProgress sx={{ color: '#FF7A18' }} />
-        <Typography variant="body2" color="text.secondary">Загружаем рецепт…</Typography>
+        <Typography variant="body2" color="text.secondary">{t('recipe_loading')}…</Typography>
       </Box>
     )
   }
@@ -92,7 +95,7 @@ export default function RecipeView({ onBack }: RecipeViewProps) {
     return (
       <Box>
         <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>
-        <Button variant="outlined" onClick={handleBack} startIcon={<ArrowBack />}>Назад</Button>
+        <Button variant="outlined" onClick={handleBack} startIcon={<ArrowBack />}>{t('back')}</Button>
       </Box>
     )
   }
@@ -100,8 +103,8 @@ export default function RecipeView({ onBack }: RecipeViewProps) {
   if (!currentRecipe) {
     return (
       <Box>
-        <Alert severity="info">Рецепт не найден</Alert>
-        <Button variant="outlined" onClick={handleBack} startIcon={<ArrowBack />} sx={{ mt: 2 }}>Назад</Button>
+        <Alert severity="info">{t('recipe_not_found')}</Alert>
+        <Button variant="outlined" onClick={handleBack} startIcon={<ArrowBack />} sx={{ mt: 2 }}>{t('back')}</Button>
       </Box>
     )
   }
@@ -158,7 +161,7 @@ export default function RecipeView({ onBack }: RecipeViewProps) {
               '&:hover': { bgcolor: 'rgba(0,0,0,0.45)' },
             }}
           >
-            Назад
+            {t('back')}
           </Button>
           <Box sx={{ position: 'absolute', bottom: 0, left: 0, right: 0, p: '16px 20px 20px' }}>
             <Typography
@@ -172,7 +175,9 @@ export default function RecipeView({ onBack }: RecipeViewProps) {
                 textShadow: '0 2px 8px rgba(0,0,0,0.3)',
               }}
             >
-              {currentRecipe.dish_name}
+              {lang === 'en' && currentRecipe.dish_name_en
+              ? currentRecipe.dish_name_en
+              : currentRecipe.dish_name}
             </Typography>
           </Box>
         </Box>
@@ -181,13 +186,13 @@ export default function RecipeView({ onBack }: RecipeViewProps) {
         {recipes.length > 1 && (
           <Box sx={{ mb: 2.5 }}>
             <Typography variant="caption" sx={{ color: 'rgba(0,0,0,0.45)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', mb: 1, display: 'block' }}>
-              Вариант рецепта
+              {t('recipe_variant')}
             </Typography>
             <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
               {recipes.map((r, i) => (
                 <Chip
                   key={r.id}
-                  label={r.title}
+                  label={recipeTitle(r.title, r.title_en, lang)}
                   onClick={() => dispatch(setVariant(i))}
                   variant={selectedVariant === i ? 'filled' : 'outlined'}
                   sx={{
@@ -222,13 +227,13 @@ export default function RecipeView({ onBack }: RecipeViewProps) {
               <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center', mb: 2 }}>
                 <Chip
                   icon={<AccessTime sx={{ fontSize: '15px !important' }} />}
-                  label={`${currentRecipe.cooking_time} мин`}
+                  label={`${currentRecipe.cooking_time} ${t('min')}`}
                   size="small"
                   sx={{ bgcolor: 'rgba(255,122,24,0.15)', color: '#E86A08', border: '1px solid rgba(255,122,24,0.30)', fontWeight: 600 }}
                 />
                 <Chip
                   icon={<People sx={{ fontSize: '15px !important' }} />}
-                  label={`${currentRecipe.servings} порц.`}
+                  label={`${currentRecipe.servings} ${t('portions')}`}
                   size="small"
                   sx={{ bgcolor: 'rgba(255,122,24,0.15)', color: '#E86A08', border: '1px solid rgba(255,122,24,0.30)', fontWeight: 600 }}
                 />
@@ -240,7 +245,7 @@ export default function RecipeView({ onBack }: RecipeViewProps) {
                 {currentRecipe.source_url && (
                   <Chip
                     icon={<OpenInNew sx={{ fontSize: '14px !important' }} />}
-                    label="Источник"
+                    label={t('recipe_source')}
                     component="a"
                     href={currentRecipe.source_url}
                     target="_blank"
@@ -252,7 +257,7 @@ export default function RecipeView({ onBack }: RecipeViewProps) {
                 )}
               </Box>
               <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5, color: '#1A1A1A' }}>
-                🧂 Ингредиенты
+                🧂 {t('recipe_ingredients')}
               </Typography>
               <List dense disablePadding>
                 {currentRecipe.ingredients.map((ing, index) => (
@@ -268,7 +273,7 @@ export default function RecipeView({ onBack }: RecipeViewProps) {
                     }}
                   >
                     <Typography variant="body2" sx={{ fontWeight: 500, color: '#1A1A1A' }}>
-                      {ing.ingredient_name}
+                      {lang === 'en' && ing.ingredient_name_en ? ing.ingredient_name_en : ing.ingredient_name}
                     </Typography>
                     <Typography variant="caption" sx={{ color: 'rgba(0,0,0,0.5)', fontWeight: 500 }}>
                       {ing.quantity} {ing.unit}
@@ -293,7 +298,7 @@ export default function RecipeView({ onBack }: RecipeViewProps) {
                   '&:hover': { bgcolor: isPremium ? 'rgba(255,122,24,0.12)' : 'rgba(0,0,0,0.04)' },
                 }}
               >
-                {isPremium ? 'Посчитать калории' : '🔒 Посчитать калории (Premium)'}
+                {isPremium ? t('recipe_calc_calories') : t('recipe_calc_calories_premium')}
               </Button>
             </Paper>
           </Grid>
@@ -312,10 +317,14 @@ export default function RecipeView({ onBack }: RecipeViewProps) {
               }}
             >
               <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2, color: '#1A1A1A' }}>
-                👨‍🍳 Приготовление
+                👨‍🍳 {t('recipe_steps')}
               </Typography>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-                {currentRecipe.instructions.map((step, index) => (
+                {recipeInstructions(
+                    JSON.stringify(currentRecipe.instructions),
+                    currentRecipe.instructions_en,
+                    lang
+                  ).map((step, index) => (
                   <motion.div
                     key={`${selectedVariant}-${index}`}
                     initial={{ opacity: 0, x: -12 }}
@@ -329,7 +338,7 @@ export default function RecipeView({ onBack }: RecipeViewProps) {
                         alignItems: 'flex-start',
                         pb: index < currentRecipe.instructions.length - 1 ? 2 : 0,
                         mb: index < currentRecipe.instructions.length - 1 ? 2 : 0,
-                        borderBottom: index < currentRecipe.instructions.length - 1 ? '1px solid rgba(255,122,24,0.12)' : 'none',
+                        borderBottom: 'none',
                       }}
                     >
                       <Box
@@ -366,7 +375,7 @@ export default function RecipeView({ onBack }: RecipeViewProps) {
 
       {/* Calorie Dialog */}
       <Dialog open={calorieOpen} onClose={() => setCalorieOpen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle sx={{ fontWeight: 700, pb: 1 }}>📷 Калории блюда</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 700, pb: 1 }}>📷 {t('recipe_calories_title')}</DialogTitle>
         <DialogContent>
           {calorieEstimate ? (
             <CalorieCard estimate={calorieEstimate} />
@@ -375,12 +384,12 @@ export default function RecipeView({ onBack }: RecipeViewProps) {
               {photoStatus === 'analyzing' ? (
                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
                   <CircularProgress sx={{ color: '#FF7A18' }} />
-                  <Typography variant="body2" color="text.secondary">Анализирую фото…</Typography>
+                  <Typography variant="body2" color="text.secondary">{t('recipe_analyzing')}…</Typography>
                 </Box>
               ) : (
                 <>
                   <Typography variant="body2" sx={{ color: 'rgba(0,0,0,0.55)', mb: 2 }}>
-                    Сфотографируйте готовое блюдо — ИИ оценит калории и КБЖУ
+                    {t('recipe_photo_dish')}
                   </Typography>
                   {uploadError && <Alert severity="error" sx={{ mb: 2, textAlign: 'left' }}>{uploadError}</Alert>}
                   <input
@@ -396,7 +405,7 @@ export default function RecipeView({ onBack }: RecipeViewProps) {
                     onClick={() => fileInputRef.current?.click()}
                     sx={{ background: 'linear-gradient(135deg, #FF7A18, #FFB347)', borderRadius: 2 }}
                   >
-                    Загрузить фото
+                    {t('recipe_upload_photo')}
                   </Button>
                 </>
               )}
@@ -404,7 +413,7 @@ export default function RecipeView({ onBack }: RecipeViewProps) {
           )}
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setCalorieOpen(false)} sx={{ color: 'rgba(0,0,0,0.45)' }}>Закрыть</Button>
+          <Button onClick={() => setCalorieOpen(false)} sx={{ color: 'rgba(0,0,0,0.45)' }}>{t('close')}</Button>
         </DialogActions>
       </Dialog>
     </motion.div>

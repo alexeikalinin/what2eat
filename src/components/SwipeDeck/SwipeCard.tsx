@@ -4,6 +4,8 @@ import { AccessTime, ShoppingCart } from '@mui/icons-material'
 import { Dish } from '../../types'
 import { DIFFICULTY_LABELS, DIFFICULTY_COLORS } from '../../utils/constants'
 import { getDishImageUrl, getDishSvgFallback } from '../../utils/imageUtils'
+import { useLanguage } from '../../hooks/useLanguage'
+import { dishName, ingredientName } from '../../utils/lang'
 
 interface SwipeCardProps {
   dish: Dish
@@ -13,6 +15,7 @@ interface SwipeCardProps {
 export default function SwipeCard({ dish, swipeDirection }: SwipeCardProps) {
   const imageUrl = getDishImageUrl(dish.name, dish.image_url)
   const [imgLoaded, setImgLoaded] = useState(false)
+  const { t, lang } = useLanguage()
 
   return (
     <Box
@@ -48,7 +51,7 @@ export default function SwipeCard({ dish, swipeDirection }: SwipeCardProps) {
       <Box
         component="img"
         src={imageUrl}
-        alt={dish.name}
+        alt={dishName(dish, lang)}
         onLoad={() => setImgLoaded(true)}
         onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
           e.currentTarget.onerror = null
@@ -101,13 +104,13 @@ export default function SwipeCard({ dish, swipeDirection }: SwipeCardProps) {
             textShadow: '0 2px 8px rgba(0,0,0,0.3)',
           }}
         >
-          {dish.name}
+          {dishName(dish, lang)}
         </Typography>
 
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
           <Chip
             icon={<AccessTime sx={{ color: 'rgba(255,255,255,0.85) !important', fontSize: '13px !important' }} />}
-            label={`${dish.cooking_time} мин`}
+            label={`${dish.cooking_time} ${t('min')}`}
             size="small"
             sx={{
               bgcolor: 'rgba(255,255,255,0.18)',
@@ -130,7 +133,7 @@ export default function SwipeCard({ dish, swipeDirection }: SwipeCardProps) {
           />
 {dish.is_vegan && (
             <Chip
-              label="Веган"
+              label={t('card_vegan')}
               size="small"
               sx={{
                 bgcolor: 'rgba(34,197,94,0.2)',
@@ -142,7 +145,7 @@ export default function SwipeCard({ dish, swipeDirection }: SwipeCardProps) {
           )}
           {!dish.is_vegan && dish.is_vegetarian && (
             <Chip
-              label="Вегетар."
+              label={t('card_vegetarian')}
               size="small"
               sx={{
                 bgcolor: 'rgba(245,158,11,0.2)',
@@ -170,7 +173,7 @@ export default function SwipeCard({ dish, swipeDirection }: SwipeCardProps) {
           >
             <ShoppingCart sx={{ fontSize: 13, color: '#fcd34d' }} />
             <Typography variant="caption" sx={{ color: '#fcd34d', fontWeight: 500 }}>
-              Докупить: {dish.missing_ingredients.map(i => i.name).join(', ')}
+              {t('card_buy_more')}: {dish.missing_ingredients.map(i => ingredientName(i, lang)).join(', ')}
             </Typography>
           </Box>
         )}
@@ -194,7 +197,7 @@ export default function SwipeCard({ dish, swipeDirection }: SwipeCardProps) {
           }}
         >
           <Typography sx={{ color: '#22C55E', fontWeight: 900, fontSize: 28, letterSpacing: 3, lineHeight: 1, textShadow: '0 1px 2px rgba(0,0,0,0.2)' }}>
-            COOK ❤️
+            {t('swipe_cook_label')} ❤️
           </Typography>
         </Box>
       )}
@@ -217,7 +220,7 @@ export default function SwipeCard({ dish, swipeDirection }: SwipeCardProps) {
           }}
         >
           <Typography sx={{ color: '#FF4D4D', fontWeight: 900, fontSize: 28, letterSpacing: 3, lineHeight: 1, textShadow: '0 1px 2px rgba(0,0,0,0.2)' }}>
-            SKIP ✖
+            {t('swipe_skip_label')} ✖
           </Typography>
         </Box>
       )}

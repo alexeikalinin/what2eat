@@ -1,5 +1,6 @@
 import { Box, Typography, Paper, LinearProgress } from '@mui/material'
 import { CalorieEstimate } from '../../services/openai'
+import { useLanguage } from '../../hooks/useLanguage'
 
 interface CalorieCardProps {
   estimate: CalorieEstimate
@@ -14,10 +15,11 @@ interface MacroRow {
 }
 
 export default function CalorieCard({ estimate }: CalorieCardProps) {
+  const { t } = useLanguage()
   const macros: MacroRow[] = [
-    { label: 'Белки', value: estimate.protein, unit: 'г', color: '#6366F1', max: 60 },
-    { label: 'Жиры', value: estimate.fat, unit: 'г', color: '#FF7A18', max: 80 },
-    { label: 'Углеводы', value: estimate.carbs, unit: 'г', color: '#22C55E', max: 120 },
+    { label: t('protein'), value: estimate.protein, unit: 'г', color: '#6366F1', max: 60 },
+    { label: t('fat'), value: estimate.fat, unit: 'г', color: '#FF7A18', max: 80 },
+    { label: t('carbs'), value: estimate.carbs, unit: 'г', color: '#22C55E', max: 120 },
   ]
 
   return (
@@ -47,7 +49,7 @@ export default function CalorieCard({ estimate }: CalorieCardProps) {
             {estimate.calories}
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            ккал
+            {t('kcal')}
           </Typography>
         </Box>
       </Box>

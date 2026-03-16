@@ -27,6 +27,8 @@ import { usePlan } from '../../hooks/usePlan'
 import PaywallModal from '../PaywallModal'
 import { useModalContext } from '../../contexts/ModalContext'
 import PremiumHint from '../PremiumHint'
+import { useLanguage } from '../../hooks/useLanguage'
+import { ingredientName } from '../../utils/lang'
 
 interface PhotoUploadProps {
   onIngredientsConfirmed: (ingredientIds: number[]) => void
@@ -42,6 +44,7 @@ export default function PhotoUpload({ onIngredientsConfirmed, onBack, initialFil
   const { ingredients } = useAppSelector((state) => state.ingredients)
   const { canUseAIPhoto, canUseCalories, trackLocalAiPhoto, isPremium, DAILY_AI_PHOTO_LIMIT } = usePlan()
   const { openAuth } = useModalContext()
+  const { t, lang } = useLanguage()
   const [paywallOpen, setPaywallOpen] = useState(false)
   const [paywallReason, setPaywallReason] = useState('')
 
@@ -61,7 +64,12 @@ export default function PhotoUpload({ onIngredientsConfirmed, onBack, initialFil
 
   const handleFile = useCallback(
     async (file: File) => {
-      if (!file.type.startsWith('image/')) return
+      // HEIC/HEIF на iOS Safari имеет type='' — проверяем расширение тоже
+      const isHeicFile = /\.(heic|heif)$/i.test(file.name)
+      if (!file.type.startsWith('image/') && !isHeicFile) {
+        dispatch(setError(t('photo_format_unsupported')))
+        return
+      }
       dispatch(clearPhoto())
       setSelectedNames(new Set())
       setCustomIngredients([])
@@ -71,7 +79,7 @@ export default function PhotoUpload({ onIngredientsConfirmed, onBack, initialFil
         try {
           fileToUse = await convertHeicToJpegFile(file)
         } catch {
-          dispatch(setError('Не удалось конвертировать фото. Попробуйте другое фото или формат JPEG.'))
+          dispatch(setError(t('photo_convert_error')))
           return
         }
       }
@@ -88,11 +96,7 @@ export default function PhotoUpload({ onIngredientsConfirmed, onBack, initialFil
       } catch {
         const supported = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
         if (!supported.includes(file.type)) {
-          dispatch(
-            setError(
-              'Формат не поддерживается. Загрузите JPEG или PNG. iPhone: Настройки → Камера → Форматы → «Наиболее совместимые».'
-            )
-          )
+          dispatch(setError(t('photo_format_hint')))
           return
         }
         const reader = new FileReader()
@@ -107,7 +111,7 @@ export default function PhotoUpload({ onIngredientsConfirmed, onBack, initialFil
 
       if (tab === 0) {
         if (!canUseAIPhoto()) {
-          setPaywallReason(`AI распознавание ингредиентов: ${DAILY_AI_PHOTO_LIMIT} фото в день бесплатно. Premium — без ограничений.`)
+          setPaywallReason(t('photo_ai_paywall_reason'))
           setPaywallOpen(true)
           return
         }
@@ -120,7 +124,7 @@ export default function PhotoUpload({ onIngredientsConfirmed, onBack, initialFil
         }
       } else {
         if (!canUseCalories()) {
-          setPaywallReason('Оценка калорий по фото — только в Premium.')
+          setPaywallReason(t('photo_calories_premium_reason'))
           setPaywallOpen(true)
           return
         }
@@ -130,8 +134,9 @@ export default function PhotoUpload({ onIngredientsConfirmed, onBack, initialFil
     [dispatch, ingredients, tab, canUseAIPhoto, canUseCalories, trackLocalAiPhoto, DAILY_AI_PHOTO_LIMIT]
   )
 
-  // Автоматически обрабатываем файл из камеры при открытии
+  // Сбрасываем старое состояние фото при каждом открытии компонента (QA 4.9 — нет утечки calorieEstimate)
   useEffect(() => {
+    dispatch(clearPhoto())
     if (initialFile) handleFile(initialFile)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -233,10 +238,10 @@ export default function PhotoUpload({ onIngredientsConfirmed, onBack, initialFil
             startIcon={<ArrowBack />}
             sx={{ color: 'rgba(0,0,0,0.45)' }}
           >
-            Назад
+            {t('back')}
           </Button>
           <Typography variant="h5" sx={{ fontWeight: 700, color: '#1A1A1A' }}>
-            📷 Анализ фото
+            📷 {t('photo_title')}
           </Typography>
         </Box>
 
@@ -246,10 +251,10 @@ export default function PhotoUpload({ onIngredientsConfirmed, onBack, initialFil
             iconPosition="start"
             label={
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                Определить продукты
+                {t('photo_detect')}
                 {!isPremium && (
                   <Typography variant="caption" sx={{ color: 'rgba(0,0,0,0.38)', fontSize: '0.7rem' }}>
-                    (1/день)
+                    {t('photo_daily_limit_caption')}
                   </Typography>
                 )}
               </Box>
@@ -260,7 +265,7 @@ export default function PhotoUpload({ onIngredientsConfirmed, onBack, initialFil
             iconPosition="start"
             label={
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                Калории блюда
+                {t('photo_calories')}
                 {!isPremium && (
                   <Typography variant="caption" sx={{ color: '#FF7A18', fontSize: '0.7rem', fontWeight: 600 }}>
                     Premium
@@ -298,7 +303,7 @@ export default function PhotoUpload({ onIngredientsConfirmed, onBack, initialFil
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/*"
+            accept="image/*,.heic,.heif"
             style={{ display: 'none' }}
             onChange={handleFileInput}
           />
@@ -325,10 +330,10 @@ export default function PhotoUpload({ onIngredientsConfirmed, onBack, initialFil
               </Box>
               <Box>
                 <Typography variant="body1" sx={{ fontWeight: 600, color: '#1A1A1A', mb: 0.5 }}>
-                  Перетащите фото сюда
+                  {t('photo_drop')}
                 </Typography>
                 <Typography variant="body2" sx={{ color: 'rgba(0,0,0,0.45)' }}>
-                  или нажмите для выбора
+                  {t('photo_or_click')}
                 </Typography>
               </Box>
             </>
@@ -338,7 +343,7 @@ export default function PhotoUpload({ onIngredientsConfirmed, onBack, initialFil
         {status === 'analyzing' && (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2.5, p: 2, bgcolor: '#FFF8F0', borderRadius: 3 }}>
             <CircularProgress size={22} sx={{ color: '#FF7A18' }} />
-            <Typography variant="body2" sx={{ color: '#FF7A18', fontWeight: 600 }}>Анализирую фото…</Typography>
+            <Typography variant="body2" sx={{ color: '#FF7A18', fontWeight: 600 }}>{t('photo_analyzing')}…</Typography>
           </Box>
         )}
 
@@ -352,12 +357,12 @@ export default function PhotoUpload({ onIngredientsConfirmed, onBack, initialFil
           <Box>
             {detectedIngredientNames.length === 0 ? (
               <Alert severity="warning" sx={{ mb: 2 }}>
-                Ингредиенты не распознаны. Попробуйте другое фото.
+                {t('photo_not_recognized_try')}
               </Alert>
             ) : (
               <>
                 <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#1A1A1A', mb: 1.5 }}>
-                  Найденные продукты — отметьте нужные:
+                  {t('photo_found_products')} {t('photo_select_hint')}
                 </Typography>
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2.5 }}>
                   {[...detectedIngredientNames, ...customIngredients.filter(n => !detectedIngredientNames.includes(n))].map((name) => {
@@ -408,7 +413,7 @@ export default function PhotoUpload({ onIngredientsConfirmed, onBack, initialFil
                       '&:hover': { bgcolor: '#FFF3E0' },
                     }}
                   >
-                    Добавить продукт
+                    {t('photo_add_product')}
                   </Button>
                 </Box>
 
@@ -424,7 +429,7 @@ export default function PhotoUpload({ onIngredientsConfirmed, onBack, initialFil
                     <TextField
                       autoFocus
                       size="small"
-                      placeholder="Поиск..."
+                      placeholder={`${t('search')}...`}
                       fullWidth
                       value={replaceSearchQuery}
                       onChange={(e) => setReplaceSearchQuery(e.target.value)}
@@ -434,18 +439,18 @@ export default function PhotoUpload({ onIngredientsConfirmed, onBack, initialFil
                   {replaceQueryIsNew && (
                     <MenuItem onClick={() => replaceName && handleReplace(replaceName, replaceSearchQuery.trim())}>
                       <ListItemText
-                        primary={`+ Добавить «${replaceSearchQuery.trim()}»`}
+                        primary={`${t('photo_add_item_prefix')}${replaceSearchQuery.trim()}${t('photo_add_item_suffix')}`}
                         primaryTypographyProps={{ color: '#FF7A18', fontWeight: 600 }}
                       />
                     </MenuItem>
                   )}
                   {replaceFilteredIngredients.map((ing) => (
                     <MenuItem key={ing.id} onClick={() => replaceName && handleReplace(replaceName, ing.name)}>
-                      <ListItemText primary={ing.name} />
+                      <ListItemText primary={ingredientName(ing, lang)} />
                     </MenuItem>
                   ))}
                   {replaceFilteredIngredients.length === 0 && !replaceQueryIsNew && (
-                    <MenuItem disabled>Ничего не найдено</MenuItem>
+                    <MenuItem disabled>{t('photo_nothing_found')}</MenuItem>
                   )}
                 </Menu>
 
@@ -461,7 +466,7 @@ export default function PhotoUpload({ onIngredientsConfirmed, onBack, initialFil
                     <TextField
                       autoFocus
                       size="small"
-                      placeholder="Поиск или название..."
+                      placeholder={t('photo_search_placeholder')}
                       fullWidth
                       value={addSearchQuery}
                       onChange={(e) => setAddSearchQuery(e.target.value)}
@@ -477,18 +482,18 @@ export default function PhotoUpload({ onIngredientsConfirmed, onBack, initialFil
                   {addQueryIsNew && (
                     <MenuItem onClick={() => handleAddProduct(addSearchQuery.trim())}>
                       <ListItemText
-                        primary={`+ Добавить «${addSearchQuery.trim()}»`}
+                        primary={`${t('photo_add_item_prefix')}${addSearchQuery.trim()}${t('photo_add_item_suffix')}`}
                         primaryTypographyProps={{ color: '#FF7A18', fontWeight: 600 }}
                       />
                     </MenuItem>
                   )}
                   {addFilteredIngredients.map((ing) => (
                     <MenuItem key={ing.id} onClick={() => handleAddProduct(ing.name)}>
-                      <ListItemText primary={ing.name} />
+                      <ListItemText primary={ingredientName(ing, lang)} />
                     </MenuItem>
                   ))}
                   {addFilteredIngredients.length === 0 && !addQueryIsNew && (
-                    <MenuItem disabled>Ничего не найдено</MenuItem>
+                    <MenuItem disabled>{t('photo_nothing_found')}</MenuItem>
                   )}
                 </Menu>
 
@@ -500,15 +505,15 @@ export default function PhotoUpload({ onIngredientsConfirmed, onBack, initialFil
                   fullWidth
                   sx={{ py: 1.5, fontSize: '0.95rem', borderRadius: 3 }}
                 >
-                  Найти блюда ({selectedNames.size} продуктов)
+                  {t('app_find_dishes')} ({selectedNames.size})
                 </Button>
 
                 {!isPremium && !canUseAIPhoto() && (
                   <Box sx={{ mt: 2 }}>
                     <PremiumHint
                       variant="banner"
-                      text={`Исчерпан дневной лимит (${DAILY_AI_PHOTO_LIMIT} фото). Premium — без ограничений.`}
-                      paywallReason={`AI распознавание ингредиентов: ${DAILY_AI_PHOTO_LIMIT} фото в день бесплатно. Premium — без ограничений.`}
+                      text={t('photo_daily_limit_hint')}
+                      paywallReason={t('photo_ai_paywall_reason')}
                     />
                   </Box>
                 )}
@@ -519,7 +524,7 @@ export default function PhotoUpload({ onIngredientsConfirmed, onBack, initialFil
 
         {tab === 1 && !isPremium && !previewUrl && (
           <Box
-            onClick={() => { setPaywallReason('Оценка калорий по фото — только в Premium.'); setPaywallOpen(true) }}
+            onClick={() => { setPaywallReason(t('photo_calories_premium_reason')); setPaywallOpen(true) }}
             sx={{
               textAlign: 'center',
               py: 4,
@@ -532,13 +537,13 @@ export default function PhotoUpload({ onIngredientsConfirmed, onBack, initialFil
           >
             <Lock sx={{ color: '#FF7A18', fontSize: 36, mb: 1 }} />
             <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#1A1A1A', mb: 0.5 }}>
-              Только Premium
+              {t('photo_premium_only')}
             </Typography>
             <Typography variant="body2" sx={{ color: 'rgba(0,0,0,0.55)', mb: 2 }}>
-              Оценка КБЖУ блюда по фото
+              {t('photo_calories_desc')}
             </Typography>
             <Button variant="contained" size="small" sx={{ background: 'linear-gradient(135deg, #FF7A18, #FFB347)', borderRadius: 2 }}>
-              Подключить Premium
+              {t('photo_connect_premium')}
             </Button>
           </Box>
         )}

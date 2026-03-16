@@ -1,4 +1,5 @@
 import { useAppSelector } from './redux'
+import { incrementUsage } from '../services/supabase'
 
 const DAILY_SWIPE_LIMIT = 10
 const DAILY_AI_PHOTO_LIMIT = 1
@@ -70,13 +71,17 @@ export function usePlan() {
   }
 
   function trackLocalSwipe(): void {
-    if (!isLoggedIn) {
+    if (isLoggedIn) {
+      if (!isPremium && user?.id) incrementUsage(user.id, 'swipes_count')
+    } else {
       incrementLocal(getTodayKey('w2e_swipes'))
     }
   }
 
   function trackLocalAiPhoto(): void {
-    if (!isLoggedIn) {
+    if (isLoggedIn) {
+      if (!isPremium && user?.id) incrementUsage(user.id, 'ai_photo_count')
+    } else {
       incrementLocal(getTodayKey('w2e_aiphoto'))
     }
   }

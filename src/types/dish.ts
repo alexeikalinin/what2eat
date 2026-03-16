@@ -7,7 +7,9 @@ export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack'
 export interface Dish {
   id: number
   name: string
+  name_en?: string | null
   description: string | null
+  description_en?: string | null
   image_url: string | null
   cooking_time: number
   difficulty: Difficulty
@@ -19,6 +21,6 @@ export interface Dish {
   meal_type?: MealType
   ingredients?: Ingredient[]
   match_count?: number
-  coverage?: number          // 0.0–1.0: доля ключевых ингредиентов блюда, которые есть у пользователя
+  coverage?: number
   missing_ingredients?: Ingredient[]
 }

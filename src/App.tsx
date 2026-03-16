@@ -28,6 +28,7 @@ import QuickIdeas from './components/QuickIdeas'
 import AuthModal from './components/AuthModal'
 import PaywallModal from './components/PaywallModal'
 import { ModalContext } from './contexts/ModalContext'
+import { useLanguage } from './hooks/useLanguage'
 
 type View = 'ingredients' | 'photo' | 'dishes' | 'swipe_results' | 'recipe' | 'shopping_list' | 'weekly_planner' | 'randomizer_focus'
 
@@ -42,6 +43,8 @@ function App() {
   const [authModalOpen, setAuthModalOpen] = useState(false)
   const [paywallReason, setPaywallReason] = useState<string | undefined>()
   const [successPaywallOpen, setSuccessPaywallOpen] = useState(false)
+
+  const { t } = useLanguage()
 
   const modalContext = {
     openAuth: () => setAuthModalOpen(true),
@@ -193,7 +196,7 @@ function App() {
           ) : (
             <Box sx={{ textAlign: 'center' }}>
               <CircularProgress sx={{ color: '#FF7A18', mb: 2 }} />
-              <Typography variant="body2" color="text.secondary">Загрузка рецептов…</Typography>
+              <Typography variant="body2" color="text.secondary">{t('app_loading')}…</Typography>
             </Box>
           )}
         </Box>
@@ -261,7 +264,7 @@ function App() {
                       '& .MuiAccordionSummary-content': { my: 1.5 },
                     }}
                   >
-                    Или выберите ингредиенты вручную
+                    {t('app_select_ingredients')}
                   </AccordionSummary>
                   <AccordionDetails sx={{ pt: 0, pb: 2, px: 2 }}>
                     <IngredientSelector hideTitle />
@@ -287,7 +290,7 @@ function App() {
                     startIcon={<Search />}
                     sx={{ py: 1.5, fontSize: '0.95rem', borderRadius: 3 }}
                   >
-                    Найти блюда
+                    {t('app_find_dishes')}
                     {selectedIngredients.length > 0 && ` (${selectedIngredients.length})`}
                   </Button>
                 </motion.div>
@@ -299,7 +302,7 @@ function App() {
                     startIcon={<Casino />}
                     sx={{ py: 1.5, px: 2.5, borderRadius: 3, whiteSpace: 'nowrap' }}
                   >
-                    Случайное
+                    {t('app_random')}
                   </Button>
                 </motion.div>
               </Box>
@@ -331,10 +334,10 @@ function App() {
                   }}
                 >
                   <Typography variant="body2" sx={{ color: 'rgba(0,0,0,0.6)', fontSize: '0.82rem' }}>
-                    Вы на Free-плане
+                    {t('app_free_plan')}
                   </Typography>
                   <Typography variant="body2" sx={{ color: '#FF7A18', fontWeight: 600, fontSize: '0.82rem' }}>
-                    Обновить до Premium →
+                    {t('app_upgrade')} →
                   </Typography>
                 </Box>
               )}
@@ -398,7 +401,7 @@ function App() {
         open={successPaywallOpen}
         onClose={() => setSuccessPaywallOpen(false)}
         onLoginRequired={() => setAuthModalOpen(true)}
-        reason={paywallReason ?? 'Разблокируйте все возможности What2Eat'}
+        reason={paywallReason ?? t('app_unlock_all')}
       />
     </>
     </ModalContext.Provider>

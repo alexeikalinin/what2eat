@@ -15,6 +15,10 @@ import { motion } from 'framer-motion'
 import { useAppSelector } from '../../hooks/redux'
 import { INGREDIENT_CATEGORIES } from '../../utils/constants'
 import { Ingredient } from '../../types'
+import PremiumHint from '../PremiumHint'
+import { usePlan } from '../../hooks/usePlan'
+import { useLanguage } from '../../hooks/useLanguage'
+import { ingredientName } from '../../utils/lang'
 
 const STORAGE_KEY = 'what2eat_shopping_checked'
 
@@ -26,6 +30,8 @@ export default function ShoppingList({ onBack }: ShoppingListProps) {
   const { likedDishIds } = useAppSelector((state) => state.swipe)
   const { dishes } = useAppSelector((state) => state.dishes)
   const { selectedIngredients } = useAppSelector((state) => state.ingredients)
+  const { isPremium } = usePlan()
+  const { t, lang } = useLanguage()
 
   const [checked, setChecked] = useState<Set<number>>(() => {
     try {
@@ -97,12 +103,12 @@ export default function ShoppingList({ onBack }: ShoppingListProps) {
             startIcon={<ArrowBack />}
             sx={{ color: 'rgba(0,0,0,0.45)' }}
           >
-            Назад
+            {t('back')}
           </Button>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <ShoppingCart sx={{ color: '#FF7A18', fontSize: 22 }} />
             <Typography variant="h5" sx={{ fontWeight: 700, color: '#1A1A1A' }}>
-              Список покупок
+              {t('shopping_title')}
             </Typography>
           </Box>
           <Button
@@ -112,7 +118,7 @@ export default function ShoppingList({ onBack }: ShoppingListProps) {
             onClick={clearChecked}
             sx={{ color: 'rgba(0,0,0,0.35)', fontSize: '0.8rem' }}
           >
-            Сбросить
+            {t('reset')}
           </Button>
         </Box>
 
@@ -120,11 +126,20 @@ export default function ShoppingList({ onBack }: ShoppingListProps) {
           <Box sx={{ textAlign: 'center', py: 6 }}>
             <Box sx={{ fontSize: '3rem', mb: 2 }}>🛒</Box>
             <Alert severity="info" sx={{ maxWidth: 400, mx: 'auto' }}>
-              Список пуст. Понравьтесь блюда с режимом «Немного докупить».
+              {t('shopping_empty')}. {t('shopping_empty_hint')}.
             </Alert>
           </Box>
         ) : (
           <Box>
+            {!isPremium && (
+              <PremiumHint
+                variant="alert"
+                text={t('shopping_premium_hint_text')}
+                paywallReason={t('shopping_premium_reason')}
+                dismissKey="shopping_list"
+              />
+            )}
+
             {/* Progress bar */}
             {shoppingItems.length > 0 && (
               <Box
@@ -223,7 +238,7 @@ export default function ShoppingList({ onBack }: ShoppingListProps) {
                                 fontSize: '0.9rem',
                               }}
                             >
-                              {ing.name}
+                              {ingredientName(ing, lang)}
                             </Typography>
                           </ListItem>
                           {idx < items.length - 1 && <Divider />}

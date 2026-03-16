@@ -15,7 +15,7 @@ interface CardAPI {
   swipe(dir?: string): Promise<void>
   restoreCard(): Promise<void>
 }
-import { Box, Typography, IconButton, Button, CircularProgress } from '@mui/material'
+import { Box, Typography, IconButton, Button, CircularProgress, Snackbar, SnackbarContent } from '@mui/material'
 import { Close, Favorite, ArrowBack, Info, Restaurant } from '@mui/icons-material'
 import { Dish } from '../../types'
 import { useAppDispatch, useAppSelector } from '../../hooks/redux'
@@ -26,6 +26,7 @@ import SwipeCard from './SwipeCard'
 import { usePlan } from '../../hooks/usePlan'
 import PaywallModal from '../PaywallModal'
 import { useModalContext } from '../../contexts/ModalContext'
+import { useLanguage } from '../../hooks/useLanguage'
 
 interface SwipeDeckProps {
   dishes: Dish[]
@@ -42,9 +43,13 @@ export default function SwipeDeck({ dishes, loading = false, onDishSelect, onCom
   const { ingredients, selectedIngredients } = useAppSelector((state) => state.ingredients)
   const [swipeDirection, setSwipeDirection] = useState<Record<number, 'left' | 'right'>>({})
   const [paywallOpen, setPaywallOpen] = useState(false)
+  const [warnSnackbarOpen, setWarnSnackbarOpen] = useState(false)
+  const [warnRemaining, setWarnRemaining] = useState(3)
+  const warnShown = useRef(false)
 
   const { canSwipe, swipesRemaining, trackLocalSwipe, isPremium, DAILY_SWIPE_LIMIT } = usePlan()
   const { openAuth } = useModalContext()
+  const { t } = useLanguage()
 
   const selectedNamesKey = ingredients
     .filter((i) => selectedIngredients.includes(i.id))
@@ -81,6 +86,13 @@ export default function SwipeDeck({ dishes, loading = false, onDishSelect, onCom
       dispatch(incrementSwipeUsage())
       trackLocalSwipe()
       setSwipeDirection(prev => ({ ...prev, [dishId]: dir }))
+      // Warn when few swipes left (trackLocalSwipe уже вызван, swipesRemaining() = оставшиеся ПОСЛЕ этого свайпа)
+      const remaining = swipesRemaining()
+      if (!warnShown.current && remaining <= 3 && remaining > 0) {
+        warnShown.current = true
+        setWarnRemaining(remaining)
+        setWarnSnackbarOpen(true)
+      }
     },
     [dispatch, trackLocalSwipe, canSwipe]
   )
@@ -111,7 +123,7 @@ export default function SwipeDeck({ dishes, loading = false, onDishSelect, onCom
     return (
       <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', py: 10, gap: 2 }}>
         <CircularProgress sx={{ color: '#FF7A18' }} />
-        <Typography variant="body2" sx={{ color: 'rgba(0,0,0,0.45)' }}>Ищем подходящие блюда…</Typography>
+        <Typography variant="body2" sx={{ color: 'rgba(0,0,0,0.45)' }}>{t('swipe_searching')}…</Typography>
       </Box>
     )
   }
@@ -135,10 +147,10 @@ export default function SwipeDeck({ dishes, loading = false, onDishSelect, onCom
           <Restaurant sx={{ color: '#FF7A18', fontSize: 36 }} />
         </Box>
         <Typography variant="h5" sx={{ color: '#1A1A1A', fontWeight: 700, mb: 1 }}>
-          Ничего не нашлось
+          {t('swipe_nothing_found')}
         </Typography>
         <Typography variant="body2" sx={{ color: 'rgba(0,0,0,0.5)', mb: 3 }}>
-          Попробуйте выбрать другие ингредиенты
+          {t('swipe_try_other')}
         </Typography>
         {suggestedDishNames.length > 0 && (
           <Box
@@ -154,7 +166,7 @@ export default function SwipeDeck({ dishes, loading = false, onDishSelect, onCom
             }}
           >
             <Typography variant="subtitle2" sx={{ color: '#FF7A18', mb: 1, fontWeight: 600 }}>
-              ИИ предлагает приготовить:
+              {t('swipe_ai_suggests')}:
             </Typography>
             <Box component="ul" sx={{ m: 0, pl: 2.5, color: '#1A1A1A', lineHeight: 2 }}>
               {suggestedDishNames.map((name) => (
@@ -164,7 +176,7 @@ export default function SwipeDeck({ dishes, loading = false, onDishSelect, onCom
           </Box>
         )}
         <Button variant="contained" onClick={onBack} startIcon={<ArrowBack />}>
-          Изменить ингредиенты
+          {t('swipe_change_ingredients')}
         </Button>
       </Box>
     )
@@ -182,7 +194,7 @@ export default function SwipeDeck({ dishes, loading = false, onDishSelect, onCom
             size="small"
             sx={{ color: 'rgba(0,0,0,0.45)', fontWeight: 500 }}
           >
-            Назад
+            {t('back')}
           </Button>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             {!isPremium && (
@@ -204,7 +216,7 @@ export default function SwipeDeck({ dishes, loading = false, onDishSelect, onCom
                     fontSize: '0.75rem',
                   }}
                 >
-                  {canSwipe() ? `Свайпов: ${swipesRemaining()}/${DAILY_SWIPE_LIMIT}` : 'Лимит исчерпан'}
+                  {canSwipe() ? `${t('swipe_count')}: ${swipesRemaining()}/${DAILY_SWIPE_LIMIT}` : t('swipe_limit')}
                 </Typography>
               </Box>
             )}
@@ -227,7 +239,7 @@ export default function SwipeDeck({ dishes, loading = false, onDishSelect, onCom
                   textTransform: 'uppercase',
                 }}
               >
-                {remaining > 0 ? `Осталось: ${remaining}` : 'Всё просмотрено'}
+                {remaining > 0 ? `${t('swipe_remaining')}: ${remaining}` : t('swipe_all_seen')}
               </Typography>
             </Box>
           </Box>
@@ -237,7 +249,7 @@ export default function SwipeDeck({ dishes, loading = false, onDishSelect, onCom
             size="small"
             sx={{ color: 'rgba(0,0,0,0.35)', fontSize: '0.8rem' }}
           >
-            Сначала
+            {t('swipe_from_start')}
           </Button>
         </Box>
 
@@ -289,10 +301,10 @@ export default function SwipeDeck({ dishes, loading = false, onDishSelect, onCom
             >
               <Box sx={{ fontSize: '3rem' }}>🎉</Box>
               <Typography variant="h5" sx={{ fontWeight: 700, color: '#1A1A1A', textAlign: 'center' }}>
-                Вы просмотрели все блюда!
+                {t('swipe_all_viewed')}!
               </Typography>
               <Button variant="contained" onClick={onComplete} size="large" sx={{ px: 4 }}>
-                Посмотреть результаты
+                {t('swipe_see_results')}
               </Button>
             </Box>
           ) : (
@@ -428,8 +440,39 @@ export default function SwipeDeck({ dishes, loading = false, onDishSelect, onCom
         open={paywallOpen}
         onClose={() => setPaywallOpen(false)}
         onLoginRequired={openAuth}
-        reason="Свайп-колода: 10 карточек в день бесплатно. Premium — без ограничений."
+        reason={t('swipe_paywall_reason')}
       />
+
+      <Snackbar
+        open={warnSnackbarOpen}
+        autoHideDuration={5000}
+        onClose={() => setWarnSnackbarOpen(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <SnackbarContent
+          sx={{
+            bgcolor: '#FFF3E0',
+            color: '#1A1A1A',
+            border: '1px solid #FFE0B2',
+            borderRadius: 3,
+            boxShadow: '0 4px 20px rgba(255,122,24,0.2)',
+          }}
+          message={
+            <Typography variant="body2" sx={{ color: '#1A1A1A', fontSize: '0.875rem' }}>
+              {warnRemaining} {t('swipe_left_today')} — {t('swipe_premium_unlimited')}
+            </Typography>
+          }
+          action={
+            <Button
+              size="small"
+              onClick={() => { setWarnSnackbarOpen(false); setPaywallOpen(true) }}
+              sx={{ color: '#FF7A18', fontWeight: 700, fontSize: '0.8rem', whiteSpace: 'nowrap' }}
+            >
+              {t('learn_more')}
+            </Button>
+          }
+        />
+      </Snackbar>
     </>
   )
 }

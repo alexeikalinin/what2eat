@@ -14,6 +14,8 @@ import { useState } from 'react'
 import { Dish, Difficulty } from '../../types'
 import { DIFFICULTY_LABELS, DIFFICULTY_COLORS } from '../../utils/constants'
 import { getDishImageUrl } from '../../utils/imageUtils'
+import { useLanguage } from '../../hooks/useLanguage'
+import { dishName, dishDesc } from '../../utils/lang'
 
 interface DishCardProps {
   dish: Dish
@@ -22,12 +24,15 @@ interface DishCardProps {
 
 export default function DishCard({ dish, onSelect }: DishCardProps) {
   const [liked, setLiked] = useState(false)
+  const { lang, t } = useLanguage()
 
   const getDifficultyColor = (difficulty: Difficulty) => {
     return DIFFICULTY_COLORS[difficulty] || DIFFICULTY_COLORS.easy
   }
 
   const imageUrl = getDishImageUrl(dish.name, dish.image_url)
+  const name = dishName(dish, lang)
+  const description = dishDesc(dish, lang)
 
   return (
     <motion.div
@@ -51,7 +56,7 @@ export default function DishCard({ dish, onSelect }: DishCardProps) {
           <CardMedia
             component="img"
             image={imageUrl}
-            alt={dish.name}
+            alt={name}
             sx={{ height: 200, objectFit: 'cover' }}
           />
           {/* Coverage badge */}
@@ -76,7 +81,7 @@ export default function DishCard({ dish, onSelect }: DishCardProps) {
                 : <ShoppingCart sx={{ fontSize: 12, color: 'white' }} />
               }
               <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: 'white', lineHeight: 1 }}>
-                {dish.coverage >= 1.0 ? 'Всё есть' : `${Math.round(dish.coverage * 100)}%`}
+                {dish.coverage >= 1.0 ? t('card_have_all') : `${Math.round(dish.coverage * 100)}%`}
               </Typography>
             </Box>
           )}
@@ -112,15 +117,15 @@ export default function DishCard({ dish, onSelect }: DishCardProps) {
             component="h3"
             sx={{ fontWeight: 700, lineHeight: 1.3, color: '#1A1A1A', mb: 0.75, fontSize: '1rem' }}
           >
-            {dish.name}
+            {name}
           </Typography>
-          {dish.description && (
+          {description && (
             <Typography
               variant="body2"
               sx={{ color: 'rgba(0,0,0,0.5)', mb: 1.5, flexGrow: 1, lineHeight: 1.5,
                 display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
             >
-              {dish.description}
+              {description}
             </Typography>
           )}
 
@@ -128,14 +133,14 @@ export default function DishCard({ dish, onSelect }: DishCardProps) {
           <Box sx={{ display: 'flex', gap: 0.75, mb: 1.5, flexWrap: 'wrap' }}>
             <Chip
               icon={<AccessTime sx={{ fontSize: '13px !important' }} />}
-              label={`${dish.cooking_time} мин`}
+              label={`${dish.cooking_time} ${t('min')}`}
               size="small"
               variant="outlined"
               sx={{ bgcolor: 'rgba(255,243,224,0.6)', color: '#E86A08', border: '1px solid rgba(255,122,24,0.28)', fontWeight: 600, fontSize: '0.77rem' }}
             />
             <Chip
               icon={<People sx={{ fontSize: '13px !important' }} />}
-              label={`${dish.servings} порц.`}
+              label={`${dish.servings} ${t('portions')}`}
               size="small"
               variant="outlined"
               sx={{ bgcolor: 'rgba(255,255,255,0.8)', color: 'rgba(0,0,0,0.55)', border: '1px solid rgba(255,122,24,0.18)', fontSize: '0.77rem' }}
@@ -146,10 +151,10 @@ export default function DishCard({ dish, onSelect }: DishCardProps) {
               sx={{ bgcolor: getDifficultyColor(dish.difficulty), color: 'white', fontWeight: 700, fontSize: '0.77rem' }}
             />
             {dish.is_vegan && (
-              <Chip label="🌱 Веган" size="small" sx={{ bgcolor: '#F0FDF4', color: '#22C55E', border: 'none', fontSize: '0.77rem' }} />
+              <Chip label={`🌱 ${t('card_vegan')}`} size="small" sx={{ bgcolor: '#F0FDF4', color: '#22C55E', border: 'none', fontSize: '0.77rem' }} />
             )}
             {!dish.is_vegan && dish.is_vegetarian && (
-              <Chip label="🥗 Вегетар." size="small" sx={{ bgcolor: '#FFFBEB', color: '#D97706', border: 'none', fontSize: '0.77rem' }} />
+              <Chip label={`🥗 ${t('card_vegetarian')}`} size="small" sx={{ bgcolor: '#FFFBEB', color: '#D97706', border: 'none', fontSize: '0.77rem' }} />
             )}
           </Box>
 
@@ -169,7 +174,7 @@ export default function DishCard({ dish, onSelect }: DishCardProps) {
             >
               <ShoppingCart sx={{ fontSize: 13, color: '#D97706' }} />
               <Typography variant="caption" sx={{ color: '#D97706', fontWeight: 500 }}>
-                Докупить: {dish.missing_ingredients.map(i => i.name).join(', ')}
+                {t('card_buy_more')}: {dish.missing_ingredients.map(i => i.name).join(', ')}
               </Typography>
             </Box>
           )}
@@ -188,7 +193,7 @@ export default function DishCard({ dish, onSelect }: DishCardProps) {
               '&:hover': { boxShadow: '0 6px 20px rgba(255,122,24,0.45)' },
             }}
           >
-            Посмотреть рецепт
+            {t('card_view_recipe')}
           </Button>
         </CardContent>
       </Card>

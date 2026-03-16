@@ -21,6 +21,7 @@ import {
 import { usePlan } from '../../hooks/usePlan'
 import PaywallModal from '../PaywallModal'
 import { useModalContext } from '../../contexts/ModalContext'
+import { useLanguage } from '../../hooks/useLanguage'
 
 export default function SearchFilters() {
   const dispatch = useAppDispatch()
@@ -29,6 +30,7 @@ export default function SearchFilters() {
   )
   const { canUseAdvancedFilters } = usePlan()
   const { openAuth } = useModalContext()
+  const { t } = useLanguage()
   const [paywallOpen, setPaywallOpen] = useState(false)
 
   const isAdvanced = canUseAdvancedFilters()
@@ -50,12 +52,12 @@ export default function SearchFilters() {
                 size="small"
               />
             }
-            label={<Typography variant="body2" sx={{ color: 'rgba(0,0,0,0.65)', fontSize: '0.875rem' }}>Вегетарианское</Typography>}
+            label={<Typography variant="body2" sx={{ color: 'rgba(0,0,0,0.65)', fontSize: '0.875rem' }}>{t('filters_vegetarian')}</Typography>}
             sx={{ mr: 2, '& .MuiFormControlLabel-label': { ml: 0.5 } }}
           />
 
           {/* Только веганское — PREMIUM */}
-          <Tooltip title={!isAdvanced ? 'Только Premium' : ''} placement="top">
+          <Tooltip title={!isAdvanced ? t('filters_premium_only') : ''} placement="top">
             <FormControlLabel
               control={
                 <Switch
@@ -68,7 +70,7 @@ export default function SearchFilters() {
               label={
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                   <Typography variant="body2" sx={{ color: isAdvanced ? 'rgba(0,0,0,0.65)' : 'rgba(0,0,0,0.38)', fontSize: '0.875rem' }}>
-                    Только веганское
+                    {t('filters_vegan')}
                   </Typography>
                   {!isAdvanced && <Lock sx={{ fontSize: 13, color: 'rgba(0,0,0,0.3)' }} />}
                 </Box>
@@ -79,7 +81,7 @@ export default function SearchFilters() {
           </Tooltip>
 
           {/* Немного докупить — PREMIUM */}
-          <Tooltip title={!isAdvanced ? 'Только Premium' : ''} placement="top">
+          <Tooltip title={!isAdvanced ? t('filters_premium_only') : ''} placement="top">
             <FormControlLabel
               control={
                 <Switch
@@ -92,7 +94,7 @@ export default function SearchFilters() {
               label={
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                   <Typography variant="body2" sx={{ color: isAdvanced ? 'rgba(0,0,0,0.65)' : 'rgba(0,0,0,0.38)', fontSize: '0.875rem' }}>
-                    Немного докупить
+                    {t('filters_buy_few')}
                   </Typography>
                   {!isAdvanced && <Lock sx={{ fontSize: 13, color: 'rgba(0,0,0,0.3)' }} />}
                 </Box>
@@ -103,7 +105,7 @@ export default function SearchFilters() {
           </Tooltip>
 
           {/* Бюджет — PREMIUM */}
-          <Tooltip title={!isAdvanced ? 'Только Premium' : ''} placement="top">
+          <Tooltip title={!isAdvanced ? t('filters_premium_only') : ''} placement="top">
             <FormControlLabel
               control={
                 <Switch
@@ -116,7 +118,7 @@ export default function SearchFilters() {
               label={
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                   <Typography variant="body2" sx={{ color: isAdvanced ? 'rgba(0,0,0,0.65)' : 'rgba(0,0,0,0.38)', fontSize: '0.875rem' }}>
-                    Бюджет
+                    {t('filters_budget')}
                   </Typography>
                   {!isAdvanced && <Lock sx={{ fontSize: 13, color: 'rgba(0,0,0,0.3)' }} />}
                 </Box>
@@ -131,7 +133,7 @@ export default function SearchFilters() {
             <TextField
               size="small"
               type="number"
-              label="Максимум $"
+              label={t('filters_max')}
               value={budgetLimit ?? ''}
               onChange={(e) => dispatch(setBudgetLimit(e.target.value ? Number(e.target.value) : null))}
               InputProps={{
@@ -147,7 +149,7 @@ export default function SearchFilters() {
         open={paywallOpen}
         onClose={() => setPaywallOpen(false)}
         onLoginRequired={openAuth}
-        reason="Расширенные фильтры (веган, бюджет, докупить) — только в Premium."
+        reason={t('filters_premium_reason')}
       />
     </>
   )

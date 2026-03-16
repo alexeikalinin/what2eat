@@ -8,6 +8,7 @@ import { Close, Check, Lock, Star } from '@mui/icons-material'
 import { createCheckoutSession, StripePlan } from '../../services/stripe'
 import { useAppSelector } from '../../hooks/redux'
 import { isSupabaseConfigured } from '../../services/supabase'
+import { useLanguage } from '../../hooks/useLanguage'
 
 interface PaywallModalProps {
   open: boolean
@@ -16,34 +17,22 @@ interface PaywallModalProps {
   reason?: string
 }
 
-const FREE_FEATURES = [
-  'Ручной выбор ингредиентов (безлимит)',
-  'Поиск блюд (базовый)',
-  'Фильтр «вегетарианское»',
-  'Просмотр рецептов',
-  'Свайп-колода (10/день)',
-  'Список покупок из сессии',
-  'AI фото-распознавание (1/день)',
-  'Рандомайзер: кухня + тип блюда',
-]
-
-const PREMIUM_FEATURES = [
-  'Всё из Free',
-  'Свайп-колода — безлимит',
-  'AI фото-распознавание — безлимит',
-  'AI оценка калорий по фото',
-  'AI подсказки блюд',
-  'Рандомайзер: время, сложность, вегетарианское',
-  'Фильтры: веган, бюджет, «немного докупить»',
-  'Недельный планировщик',
-  'Умный список покупок из плана',
-]
-
 export default function PaywallModal({ open, onClose, onLoginRequired, reason }: PaywallModalProps) {
   const { user } = useAppSelector((state) => state.user)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [billingPlan, setBillingPlan] = useState<StripePlan>('monthly')
+  const { t } = useLanguage()
+
+  const FREE_FEATURES = [
+    t('paywall_free_ingredients'), t('paywall_free_search'), t('paywall_free_vegetarian_filter'), t('paywall_free_recipes'),
+    t('paywall_free_swipe'), t('paywall_free_shopping'), t('paywall_free_ai_photo'), t('paywall_free_randomizer'),
+  ]
+  const PREMIUM_FEATURES = [
+    t('paywall_premium_everything'), t('paywall_premium_swipe_unlimited'), t('paywall_premium_ai_photo_unlimited'),
+    t('paywall_premium_calories'), t('paywall_premium_ai_suggestions'), t('paywall_premium_randomizer_full'),
+    t('paywall_premium_filters'), t('paywall_premium_weekly'), t('paywall_premium_smart_list'),
+  ]
 
   const stripeReady = isSupabaseConfigured()
   const hasYearlyPrice = !!import.meta.env.VITE_STRIPE_PRICE_ID_YEARLY
@@ -55,7 +44,7 @@ export default function PaywallModal({ open, onClose, onLoginRequired, reason }:
       return
     }
     if (!stripeReady) {
-      setError('Supabase не настроен — подписки недоступны.')
+      setError(t('paywall_stripe_not_configured'))
       return
     }
     setLoading(true)
@@ -63,7 +52,7 @@ export default function PaywallModal({ open, onClose, onLoginRequired, reason }:
     try {
       await createCheckoutSession(billingPlan)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Ошибка')
+      setError(err instanceof Error ? err.message : t('paywall_error'))
       setLoading(false)
     }
   }
@@ -126,7 +115,7 @@ export default function PaywallModal({ open, onClose, onLoginRequired, reason }:
                 '&.Mui-selected': { bgcolor: 'white', color: '#FF7A18' },
               }}
             >
-              $2.99/мес
+              {t('paywall_price_monthly_short')}
             </ToggleButton>
             <ToggleButton
               value="yearly"
@@ -141,7 +130,7 @@ export default function PaywallModal({ open, onClose, onLoginRequired, reason }:
                 '&.Mui-selected': { bgcolor: 'white', color: '#FF7A18' },
               }}
             >
-              $23.99/год
+              {t('paywall_price_yearly_short')}
               <Box
                 component="span"
                 sx={{
@@ -162,10 +151,10 @@ export default function PaywallModal({ open, onClose, onLoginRequired, reason }:
         ) : (
           <Box>
             <Typography variant="h6" sx={{ color: 'white', fontWeight: 700 }}>
-              $2.99/мес
+              {t('paywall_price_monthly_short')}
             </Typography>
             <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.75)' }}>
-              или $23.99/год — экономия 33%
+              {t('paywall_price_yearly_saving')}
             </Typography>
           </Box>
         )}
@@ -210,7 +199,7 @@ export default function PaywallModal({ open, onClose, onLoginRequired, reason }:
                 </ListItemIcon>
                 <ListItemText
                   primary={f}
-                  primaryTypographyProps={{ variant: 'body2', color: '#1A1A1A', fontSize: '0.8rem', fontWeight: f === 'Всё из Free' ? 400 : 500 }}
+                  primaryTypographyProps={{ variant: 'body2', color: '#1A1A1A', fontSize: '0.8rem', fontWeight: f === t('paywall_premium_everything') ? 400 : 500 }}
                 />
               </ListItem>
             ))}
@@ -243,18 +232,18 @@ export default function PaywallModal({ open, onClose, onLoginRequired, reason }:
             }}
           >
             {loading
-              ? 'Открываем Stripe…'
+              ? t('paywall_stripe_loading')
               : user
                 ? billingPlan === 'yearly'
-                  ? 'Подписаться за $23.99/год'
-                  : 'Подписаться за $2.99/мес'
-                : 'Войти и подписаться'
+                  ? t('paywall_subscribe_yearly')
+                  : t('paywall_subscribe_monthly')
+                : t('paywall_login_subscribe')
             }
           </Button>
 
           {!user && (
             <Typography variant="caption" sx={{ display: 'block', textAlign: 'center', mt: 1, color: 'rgba(0,0,0,0.45)' }}>
-              Потребуется аккаунт
+              {t('paywall_need_account')}
             </Typography>
           )}
 
@@ -265,7 +254,7 @@ export default function PaywallModal({ open, onClose, onLoginRequired, reason }:
             startIcon={<Lock sx={{ fontSize: 14 }} />}
             sx={{ mt: 1, color: 'rgba(0,0,0,0.4)', fontSize: '0.8rem' }}
           >
-            Продолжить в Free
+            {t('paywall_continue_free')}
           </Button>
         </Box>
       </DialogContent>

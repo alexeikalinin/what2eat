@@ -6,7 +6,7 @@ const DAILY_AI_PHOTO_LIMIT_FREE = 1
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-action',
 }
 
 serve(async (req) => {
@@ -50,7 +50,7 @@ serve(async (req) => {
 
     // Parse request body
     const body = await req.json()
-    const action: string = body.action ?? 'generic'
+    const action: string = req.headers.get('X-Action') ?? body.action ?? 'generic'
 
     // Check limits for AI photo actions
     if (action === 'detect_ingredients' || action === 'estimate_calories') {

@@ -5,15 +5,8 @@ import { motion } from 'framer-motion'
 import { Dish } from '../../types'
 import { getQuickDishes, getDishOfDay } from '../../services/dishes'
 import { getDishImageUrl, getDishSvgFallback } from '../../utils/imageUtils'
-
-const CUISINE_TILES = [
-  { key: 'russian',          label: 'Русская',        emoji: '🥘', from: '#FF6B6B', to: '#EE4545' },
-  { key: 'italian',          label: 'Итальянская',     emoji: '🍝', from: '#FF9A3C', to: '#E07B00' },
-  { key: 'asian',            label: 'Азиатская',       emoji: '🍜', from: '#4ECDC4', to: '#2BAF9E' },
-  { key: 'eastern_european', label: 'Восточноевроп.',  emoji: '🫕', from: '#A78BFA', to: '#7C3AED' },
-  { key: 'mediterranean',    label: 'Средиземном.',    emoji: '🫒', from: '#6EE7B7', to: '#10B981' },
-  { key: 'any',              label: 'Все кухни',       emoji: '🌍', from: '#94A3B8', to: '#64748B' },
-] as const
+import { useLanguage } from '../../hooks/useLanguage'
+import { dishName } from '../../utils/lang'
 
 const CARD_WIDTH = 150
 const CARD_GAP = 12
@@ -57,12 +50,22 @@ function CarouselArrow({
 }
 
 export default function QuickIdeas({ onDishSelect, onCuisineSelect }: QuickIdeasProps) {
+  const { t, lang } = useLanguage()
   const [dishOfDay, setDishOfDay] = useState<Dish | null>(null)
   const [quickDishes, setQuickDishes] = useState<Dish[]>([])
   const [loading, setLoading] = useState(true)
   const [canScrollLeft, setCanScrollLeft] = useState(false)
   const [canScrollRight, setCanScrollRight] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
+
+  const CUISINE_TILES = [
+    { key: 'russian',          label: t('quick_cuisine_russian'),          emoji: '🥘', from: '#FF6B6B', to: '#EE4545' },
+    { key: 'italian',          label: t('quick_cuisine_italian'),          emoji: '🍝', from: '#FF9A3C', to: '#E07B00' },
+    { key: 'asian',            label: t('quick_cuisine_asian'),            emoji: '🍜', from: '#4ECDC4', to: '#2BAF9E' },
+    { key: 'eastern_european', label: t('quick_cuisine_eastern_european'), emoji: '🫕', from: '#A78BFA', to: '#7C3AED' },
+    { key: 'mediterranean',    label: t('quick_cuisine_mediterranean'),    emoji: '🫒', from: '#6EE7B7', to: '#10B981' },
+    { key: 'any',              label: t('quick_cuisine_all'),              emoji: '🌍', from: '#94A3B8', to: '#64748B' },
+  ]
 
   useEffect(() => {
     let cancelled = false
@@ -127,7 +130,7 @@ export default function QuickIdeas({ onDishSelect, onCuisineSelect }: QuickIdeas
       transition={{ duration: 0.4 }}
     >
       <Typography variant="h6" sx={{ fontWeight: 700, color: '#1A1A1A', mb: 1.5, fontSize: '1rem' }}>
-        Идеи на сегодня
+        {t('quick_ideas_title')}
       </Typography>
 
       {/* Блюдо дня */}
@@ -158,15 +161,15 @@ export default function QuickIdeas({ onDishSelect, onCuisineSelect }: QuickIdeas
             <Box sx={{ px: 1.5, py: 1.25, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <Box>
                 <Typography variant="body2" sx={{ color: '#FF7A18', fontWeight: 600, fontSize: '0.72rem', mb: 0.25 }}>
-                  Блюдо дня
+                  {t('quick_dish_of_day')}
                 </Typography>
                 <Typography variant="body1" sx={{ fontWeight: 700, color: '#1A1A1A', fontSize: '0.95rem', lineHeight: 1.2 }}>
-                  {dishOfDay.name}
+                  {dishName(dishOfDay, lang)}
                 </Typography>
               </Box>
               <Chip
                 icon={<AccessTime sx={{ fontSize: '12px !important' }} />}
-                label={`${dishOfDay.cooking_time} мин`}
+                label={`${dishOfDay.cooking_time} ${t('min')}`}
                 size="small"
                 sx={{ fontSize: '0.72rem', height: 24, bgcolor: '#FFF3E0', color: '#E65100', border: 'none' }}
               />
@@ -181,7 +184,7 @@ export default function QuickIdeas({ onDishSelect, onCuisineSelect }: QuickIdeas
           {/* Заголовок + стрелки */}
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
             <Typography variant="body2" sx={{ fontWeight: 600, color: 'rgba(0,0,0,0.55)', fontSize: '0.82rem' }}>
-              Быстро приготовить ⚡
+              {t('quick_fast')}
             </Typography>
             <Box sx={{ display: 'flex', gap: 0.5 }}>
               <CarouselArrow direction="left" onClick={scrollLeft} visible={canScrollLeft} />
@@ -226,7 +229,7 @@ export default function QuickIdeas({ onDishSelect, onCuisineSelect }: QuickIdeas
                 <Box
                   component="img"
                   src={getDishImageUrl(dish.name, dish.image_url)}
-                  alt={dish.name}
+                  alt={dishName(dish, lang)}
                   sx={{ width: '100%', height: 90, objectFit: 'cover', display: 'block' }}
                   onError={(e) => {
                     e.currentTarget.onerror = null
@@ -247,10 +250,10 @@ export default function QuickIdeas({ onDishSelect, onCuisineSelect }: QuickIdeas
                       overflow: 'hidden',
                     }}
                   >
-                    {dish.name}
+                    {dishName(dish, lang)}
                   </Typography>
                   <Typography variant="caption" sx={{ color: 'rgba(0,0,0,0.35)', fontSize: '0.68rem' }}>
-                    {dish.cooking_time} мин
+                    {dish.cooking_time} {t('min')}
                   </Typography>
                 </Box>
               </ButtonBase>
@@ -258,7 +261,7 @@ export default function QuickIdeas({ onDishSelect, onCuisineSelect }: QuickIdeas
           </Box>
 
           <Typography variant="caption" sx={{ color: 'rgba(0,0,0,0.28)', fontSize: '0.7rem', display: 'block', mt: 0.75, mb: 2 }}>
-            {quickDishes.length} блюд · листай вправо →
+            {quickDishes.length} {t('quick_dishes_swipe')} →
           </Typography>
         </>
       )}
@@ -267,7 +270,7 @@ export default function QuickIdeas({ onDishSelect, onCuisineSelect }: QuickIdeas
       {onCuisineSelect && (
         <>
           <Typography variant="body2" sx={{ fontWeight: 600, color: 'rgba(0,0,0,0.55)', fontSize: '0.82rem', mb: 1 }}>
-            По кухням 🌍
+            {t('quick_by_cuisine')}
           </Typography>
           <Box
             sx={{

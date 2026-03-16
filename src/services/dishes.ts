@@ -39,7 +39,9 @@ function rowToDish(row: Record<string, unknown>): Dish {
   return {
     id: row.id as number,
     name: row.name as string,
+    name_en: (row.name_en as string) || null,
     description: (row.description as string) || null,
+    description_en: (row.description_en as string) || null,
     image_url: (row.image_url as string) || null,
     cooking_time: row.cooking_time as number,
     difficulty: row.difficulty as Dish['difficulty'],
@@ -79,7 +81,7 @@ export async function findDishesByIngredients(
     // Step 2: full dish info
     let dishQuery = supabase
       .from('dishes')
-      .select('id, name, description, image_url, cooking_time, difficulty, servings, estimated_cost, is_vegetarian, is_vegan')
+      .select('id, name, name_en, description, description_en, image_url, cooking_time, difficulty, servings, estimated_cost, is_vegetarian, is_vegan')
       .in('id', candidateIds)
       .limit(100)
 
@@ -110,12 +112,13 @@ export async function findDishesByIngredients(
     if (allUniqueIngIds.length > 0) {
       const { data: ingDetails } = await supabase
         .from('ingredients')
-        .select('id, name, category, image_url')
+        .select('id, name, name_en, category, image_url')
         .in('id', allUniqueIngIds)
       for (const r of ingDetails ?? []) {
         ingredientDetailsMap.set(r.id as number, {
           id: r.id as number,
           name: r.name as string,
+          name_en: (r.name_en as string) || null,
           category: r.category as Ingredient['category'],
           image_url: (r.image_url as string) || null,
           show_in_selector: true,
@@ -123,28 +126,52 @@ export async function findDishesByIngredients(
       }
     }
 
+    // Step 4b: fetch user ingredient names for fuzzy matching
+    // "Сливочные помидоры" (user) should cover "Помидоры" (dish ingredient)
+    const { data: userIngDetails } = await supabase
+      .from('ingredients').select('id, name').in('id', ingredientIds)
+    const userIngNamesLower = (userIngDetails ?? []).map((r) => (r.name as string).toLowerCase())
+
+    // Fuzzy check: dish ingredient id is "covered" if any user ingredient name
+    // contains the dish ingredient name as a substring (min 3 chars)
+    function isFuzzyCovered(dishIngId: number): boolean {
+      if (userSet.has(dishIngId)) return true
+      const ing = ingredientDetailsMap.get(dishIngId)
+      if (!ing) return false
+      const dishName = ing.name.toLowerCase()
+      if (dishName.length < 3) return false
+      return userIngNamesLower.some((un) => un.includes(dishName))
+    }
+
     // Step 5: score by coverage of KEY ingredients (excluding pantry staples)
     type ScoredDish = Dish & { _missingIds: number[]; _coverage: number }
     const scoredDishes: ScoredDish[] = []
+    const seenNames = new Set<string>()  // deduplicate dishes with identical names
 
     for (const dish of candidateDishes) {
+      // Skip duplicate dish names (keep highest coverage later via sort)
+      const nameLower = dish.name.toLowerCase()
+      if (seenNames.has(nameLower)) continue
+
       const allDishIngIds = dishIngredientsMap.get(dish.id) || []
 
       // Key ingredients = dish ingredients that are NOT pantry staples
       const keyIngIds = allDishIngIds.filter((id) => !pantrySet.has(id))
 
-      // How many key ingredients does the user have?
-      const matchedKeyIds = keyIngIds.filter((id) => userSet.has(id))
+      // How many key ingredients does the user have? (exact + fuzzy)
+      const matchedKeyIds = keyIngIds.filter((id) => isFuzzyCovered(id))
 
-      // What's missing? Key ingredients not in user's set (pantry already excluded from keyIngIds)
-      const missingKeyIds = keyIngIds.filter((id) => !availableSet.has(id))
+      // What's missing? Key ingredients not available (not pantry, not exact, not fuzzy)
+      const missingKeyIds = keyIngIds.filter((id) => !availableSet.has(id) && !isFuzzyCovered(id))
 
       // Coverage: 1.0 = can cook right now, 0.5 = half the key ingredients available
       const coverage = keyIngIds.length > 0 ? matchedKeyIds.length / keyIngIds.length : 1.0
 
       // Show only if: user has at least one ingredient AND coverage >= 50%
-      const hasUserIngredient = allDishIngIds.some((id) => userSet.has(id))
+      const hasUserIngredient = allDishIngIds.some((id) => userSet.has(id) || isFuzzyCovered(id))
       if (!hasUserIngredient || coverage < 0.5) continue
+
+      seenNames.add(nameLower)
 
       const dishIngredients = allDishIngIds
         .map((id) => ingredientDetailsMap.get(id))
@@ -180,12 +207,13 @@ export async function findDishesByIngredients(
     if (allMissingIds.length > 0) {
       const { data: missingDetails } = await supabase
         .from('ingredients')
-        .select('id, name, category, image_url')
+        .select('id, name, name_en, category, image_url')
         .in('id', allMissingIds)
       for (const r of missingDetails ?? []) {
         missingDetailsMap.set(r.id as number, {
           id: r.id as number,
           name: r.name as string,
+          name_en: (r.name_en as string) || null,
           category: r.category as Ingredient['category'],
           image_url: (r.image_url as string) || null,
           show_in_selector: true,
@@ -211,7 +239,7 @@ export async function getAllDishes(): Promise<Dish[]> {
   try {
     const { data, error } = await supabase
       .from('dishes')
-      .select('id, name, description, image_url, cooking_time, difficulty, servings, estimated_cost, is_vegetarian, is_vegan, dish_ingredients(ingredient_id)')
+      .select('id, name, name_en, description, description_en, image_url, cooking_time, difficulty, servings, estimated_cost, is_vegetarian, is_vegan, dish_ingredients(ingredient_id)')
       .order('name')
 
     if (error) throw error
@@ -227,12 +255,13 @@ export async function getAllDishes(): Promise<Dish[]> {
     if (allIngIds.length > 0) {
       const { data: ingData } = await supabase
         .from('ingredients')
-        .select('id, name, category, image_url')
+        .select('id, name, name_en, category, image_url')
         .in('id', allIngIds)
       for (const r of ingData ?? []) {
         ingMap.set(r.id as number, {
           id: r.id as number,
           name: r.name as string,
+          name_en: (r.name_en as string) || null,
           category: r.category as Ingredient['category'],
           image_url: (r.image_url as string) || null,
           show_in_selector: true,
@@ -268,7 +297,7 @@ export async function getDishesWithMeat(): Promise<Dish[]> {
 
     const { data, error } = await supabase
       .from('dishes')
-      .select('id, name, description, image_url, cooking_time, difficulty, servings, estimated_cost, is_vegetarian, is_vegan, dish_ingredients(ingredient_id)')
+      .select('id, name, name_en, description, description_en, image_url, cooking_time, difficulty, servings, estimated_cost, is_vegetarian, is_vegan, dish_ingredients(ingredient_id)')
       .in('id', dishIds)
       .order('name')
     if (error) throw error
@@ -281,9 +310,9 @@ export async function getDishesWithMeat(): Promise<Dish[]> {
     const allIngIds = [...new Set(dishes.flatMap((d) => d._ingIds))]
     const ingMap = new Map<number, Ingredient>()
     if (allIngIds.length > 0) {
-      const { data: ingData } = await supabase.from('ingredients').select('id, name, category, image_url').in('id', allIngIds)
+      const { data: ingData } = await supabase.from('ingredients').select('id, name, name_en, category, image_url').in('id', allIngIds)
       for (const r of ingData ?? []) {
-        ingMap.set(r.id as number, { id: r.id as number, name: r.name as string, category: r.category as Ingredient['category'], image_url: (r.image_url as string) || null, show_in_selector: true })
+        ingMap.set(r.id as number, { id: r.id as number, name: r.name as string, name_en: (r.name_en as string) || null, category: r.category as Ingredient['category'], image_url: (r.image_url as string) || null, show_in_selector: true })
       }
     }
 
@@ -308,7 +337,7 @@ export async function getDishesByFocus(focus: RandomizerFocus): Promise<Dish[]> 
   try {
     let query = supabase
       .from('dishes')
-      .select('id, name, description, image_url, cooking_time, difficulty, servings, estimated_cost, is_vegetarian, is_vegan')
+      .select('id, name, name_en, description, description_en, image_url, cooking_time, difficulty, servings, estimated_cost, is_vegetarian, is_vegan')
 
     if (focus.cuisine !== 'any') query = query.eq('cuisine_type', focus.cuisine)
     if (focus.mealType !== 'any') query = query.eq('meal_type', focus.mealType)
@@ -323,7 +352,12 @@ export async function getDishesByFocus(focus: RandomizerFocus): Promise<Dish[]> 
     if (error) throw error
 
     const dishes = (data ?? []).map((row) => rowToDish(row as Record<string, unknown>))
-    return dishes.sort(() => Math.random() - 0.5).slice(0, 20)
+    // Fisher-Yates shuffle (unbiased)
+    for (let i = dishes.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [dishes[i], dishes[j]] = [dishes[j], dishes[i]]
+    }
+    return dishes.slice(0, 20)
   } catch (error) {
     console.error('Error getting dishes by focus:', error)
     return []
@@ -335,7 +369,7 @@ export async function getQuickDishes(limit = 50): Promise<Dish[]> {
   try {
     const { data, error } = await supabase
       .from('dishes')
-      .select('id, name, description, image_url, cooking_time, difficulty, servings, estimated_cost, is_vegetarian, is_vegan')
+      .select('id, name, name_en, description, description_en, image_url, cooking_time, difficulty, servings, estimated_cost, is_vegetarian, is_vegan')
       .lte('cooking_time', 60)
       .order('cooking_time')
       .limit(limit)
@@ -361,7 +395,7 @@ export async function getDishOfDay(): Promise<Dish | null> {
 
     const { data, error } = await supabase
       .from('dishes')
-      .select('id, name, description, image_url, cooking_time, difficulty, servings, estimated_cost, is_vegetarian, is_vegan')
+      .select('id, name, name_en, description, description_en, image_url, cooking_time, difficulty, servings, estimated_cost, is_vegetarian, is_vegan')
       .order('id')
       .range(offset, offset)
     if (error) throw error
@@ -378,7 +412,7 @@ export async function getDishById(dishId: number): Promise<Dish | null> {
   try {
     const { data, error } = await supabase
       .from('dishes')
-      .select('id, name, description, image_url, cooking_time, difficulty, servings, estimated_cost, is_vegetarian, is_vegan, dish_ingredients(ingredient_id, ingredients(id, name, category, image_url))')
+      .select('id, name, name_en, description, description_en, image_url, cooking_time, difficulty, servings, estimated_cost, is_vegetarian, is_vegan, dish_ingredients(ingredient_id, ingredients(id, name, name_en, category, image_url))')
       .eq('id', dishId)
       .maybeSingle()
     if (error) throw error

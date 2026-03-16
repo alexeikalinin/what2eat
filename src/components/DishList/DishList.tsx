@@ -5,6 +5,7 @@ import { useAppSelector, useAppDispatch } from '../../hooks/redux'
 import { findDishes, clearDishes } from '../../store/slices/dishesSlice'
 import { clearSelection } from '../../store/slices/ingredientsSlice'
 import DishCard from './DishCard'
+import { useLanguage } from '../../hooks/useLanguage'
 
 interface DishListProps {
   onDishSelect: (dishId: number) => void
@@ -16,6 +17,7 @@ export default function DishList({ onDishSelect, onBack }: DishListProps) {
   const { dishes, loading, error } = useAppSelector((state) => state.dishes)
   const { selectedIngredients } = useAppSelector((state) => state.ingredients)
   const lastSearchedRef = useRef<string>('')
+  const { t } = useLanguage()
 
   useEffect(() => {
     // Создаем строку из ID для сравнения, чтобы избежать повторных запросов
@@ -48,10 +50,10 @@ export default function DishList({ onDishSelect, onBack }: DishListProps) {
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h5">
-          {selectedIngredients.length > 0 ? 'Найдено блюд' : 'Рекомендуемые блюда'}: {dishes.length}
+          {selectedIngredients.length > 0 ? t('dishes_found') : t('dishes_recommended')}: {dishes.length}
         </Typography>
         <Button variant="outlined" onClick={handleBack} startIcon={<ArrowBack />}>
-          Назад
+          {t('dishes_back')}
         </Button>
       </Box>
 
@@ -85,7 +87,7 @@ export default function DishList({ onDishSelect, onBack }: DishListProps) {
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
                 <CheckCircle sx={{ color: '#22C55E', fontSize: 20 }} />
                 <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#15803d' }}>
-                  Можно приготовить сейчас
+                  {t('dishes_can_cook_now')}
                 </Typography>
                 <Box sx={{ bgcolor: '#DCFCE7', borderRadius: 10, px: 1, py: 0.1 }}>
                   <Typography variant="caption" sx={{ color: '#15803d', fontWeight: 700 }}>
@@ -114,7 +116,7 @@ export default function DishList({ onDishSelect, onBack }: DishListProps) {
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
                 <ShoppingCart sx={{ color: '#D97706', fontSize: 20 }} />
                 <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#92400e' }}>
-                  Нужно докупить пару ингредиентов
+                  {t('dishes_need_few_more')}
                 </Typography>
                 <Box sx={{ bgcolor: '#FEF3C7', borderRadius: 10, px: 1, py: 0.1 }}>
                   <Typography variant="caption" sx={{ color: '#92400e', fontWeight: 700 }}>
@@ -134,7 +136,7 @@ export default function DishList({ onDishSelect, onBack }: DishListProps) {
 
           {readyNow.length === 0 && needMore.length === 0 && (
             <Alert severity="info">
-              Блюда с выбранными ингредиентами не найдены. Попробуйте выбрать другие ингредиенты.
+              {t('dishes_not_found')}
             </Alert>
           )}
         </Box>
@@ -142,7 +144,7 @@ export default function DishList({ onDishSelect, onBack }: DishListProps) {
 
       {!loading && dishes.length === 0 && !error && (
         <Alert severity="info">
-          Блюда с выбранными ингредиентами не найдены. Попробуйте выбрать другие ингредиенты.
+          {t('dishes_not_found')}
         </Alert>
       )}
     </Box>

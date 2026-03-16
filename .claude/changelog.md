@@ -2,6 +2,44 @@
 
 ---
 
+## [2026-03-15] fix: Pre-production QA — 4 бага исправлены
+
+**Проблема 1:** Снакбар-предупреждение о лимите свайпов показывал неверное число (на 1 меньше) — после `trackLocalSwipe()` лишнее `- 1` давало занижение.
+**Решение:** Убрали `- 1` из `afterSwipe = swipesRemaining() - 1`; теперь `remaining = swipesRemaining()` — читается корректный остаток уже после учёта текущего свайпа.
+**Файлы:** `src/components/SwipeDeck/SwipeDeck.tsx`
+
+**Проблема 2:** HEIC-файлы с iPhone Safari молча игнорировались — `file.type === ''` не проходило `startsWith('image/')`, компонент просто возвращался без ошибки.
+**Решение:** Перед проверкой типа добавлена проверка расширения `/\.(heic|heif)$/i.test(file.name)`. Для non-image файлов теперь показывается Alert с текстом ошибки вместо silent return.
+**Файлы:** `src/components/PhotoUpload/PhotoUpload.tsx`
+
+**Проблема 3:** File input не принимал `.heic`/`.heif` в диалоге выбора файла на некоторых браузерах (только `image/*`).
+**Решение:** `accept="image/*,.heic,.heif"`.
+**Файлы:** `src/components/PhotoUpload/PhotoUpload.tsx`
+
+**Проблема 4 (QA 4.9):** Старый `calorieEstimate` из Redux оставался при повторном открытии PhotoUpload — пользователь видел КБЖУ от предыдущего анализа.
+**Решение:** `dispatch(clearPhoto())` при монтировании компонента.
+**Файлы:** `src/components/PhotoUpload/PhotoUpload.tsx`
+**Статус:** закрыт
+
+---
+
+## [2026-03-15] feature: Контекстные Premium-подсказки для free-пользователей
+
+**Проблема:** Жёсткие блокировки (paywall) работали, но пользователь не получал никаких намёков на ценность Premium в моменты пика интереса — до того как натыкался на стену.
+**Решение:** 6 мягких контекстных подсказок, не блокирующих UX:
+1. **SwipeDeck** — `Snackbar` снизу когда остаётся ≤3 свайпа (один раз за сессию, ref-флаг)
+2. **SwipeResults** — баннер-апсейл с `CalendarMonth` иконкой после списка понравившихся блюд
+3. **ShoppingList** — dismissable `Alert` вверху списка (dismiss сохраняется в localStorage)
+4. **RandomizerFocus** — `chip`-хинт под кнопкой "Поехали!" про фильтры времени/сложности
+5. **PhotoUpload** — `banner` под результатами AI-распознавания после исчерпания дневного лимита
+6. **Layout** — замок на кнопке Планировщика уже был (оставлен без изменений)
+
+Создан переиспользуемый компонент `PremiumHint` (варианты: `chip` / `alert` / `banner`) с поддержкой `dismissKey` (localStorage) и `openPaywall()` из `ModalContext`.
+**Файлы:** `src/components/PremiumHint/PremiumHint.tsx`, `src/components/PremiumHint/index.ts`, `src/components/SwipeDeck/SwipeDeck.tsx`, `src/components/SwipeResults/SwipeResults.tsx`, `src/components/ShoppingList/ShoppingList.tsx`, `src/components/RandomizerFocus/RandomizerFocusScreen.tsx`, `src/components/PhotoUpload/PhotoUpload.tsx`
+**Статус:** закрыт
+
+---
+
 ## [2026-03-15] fix: Флеш "Ничего не нашлось" + комплексный фикс изображений
 
 **Проблема 1:** При поиске блюд на долю секунды мелькал экран "Ничего не нашлось" до загрузки результатов.

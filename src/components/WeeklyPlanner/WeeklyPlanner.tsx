@@ -21,17 +21,10 @@ import { assignDishToDay, removeDishFromDay, DayOfWeek } from '../../store/slice
 import { usePlan } from '../../hooks/usePlan'
 import PaywallModal from '../PaywallModal'
 import { useModalContext } from '../../contexts/ModalContext'
+import { useLanguage } from '../../hooks/useLanguage'
+import { dishName } from '../../utils/lang'
 
-const DAY_LABELS: Record<DayOfWeek, string> = {
-  mon: 'Пн',
-  tue: 'Вт',
-  wed: 'Ср',
-  thu: 'Чт',
-  fri: 'Пт',
-  sat: 'Сб',
-  sun: 'Вс',
-}
-const DAYS = Object.keys(DAY_LABELS) as DayOfWeek[]
+const DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as DayOfWeek[]
 
 interface WeeklyPlannerProps {
   onDishSelect: (dishId: number) => void
@@ -45,6 +38,12 @@ export default function WeeklyPlanner({ onDishSelect, onBack }: WeeklyPlannerPro
   const { likedDishIds } = useAppSelector((state) => state.swipe)
   const { canUseWeeklyPlanner } = usePlan()
   const { openAuth } = useModalContext()
+  const { t, lang } = useLanguage()
+
+  const DAY_LABELS: Record<DayOfWeek, string> = {
+    mon: t('planner_mon'), tue: t('planner_tue'), wed: t('planner_wed'),
+    thu: t('planner_thu'), fri: t('planner_fri'), sat: t('planner_sat'), sun: t('planner_sun'),
+  }
 
   // All hooks before any conditional returns
   const [paywallOpen, setPaywallOpen] = useState(false)
@@ -81,10 +80,10 @@ export default function WeeklyPlanner({ onDishSelect, onBack }: WeeklyPlannerPro
           <Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
               <Button variant="text" onClick={onBack} startIcon={<ArrowBack />} sx={{ color: 'rgba(0,0,0,0.45)' }}>
-                Назад
+                {t('back')}
               </Button>
               <Typography variant="h5" sx={{ fontWeight: 700, color: '#1A1A1A' }}>
-                📅 Планировщик недели
+                📅 {t('planner_title')}
               </Typography>
             </Box>
 
@@ -115,10 +114,10 @@ export default function WeeklyPlanner({ onDishSelect, onBack }: WeeklyPlannerPro
                 <Lock sx={{ color: 'white', fontSize: 32 }} />
               </Box>
               <Typography variant="h5" sx={{ fontWeight: 700, color: '#1A1A1A', mb: 1 }}>
-                Только Premium
+                {t('planner_premium_only')}
               </Typography>
               <Typography variant="body2" sx={{ color: 'rgba(0,0,0,0.55)', mb: 3, maxWidth: 280, mx: 'auto' }}>
-                Планируйте приёмы пищи на неделю вперёд и получайте умный список покупок
+                {t('planner_premium_desc')}
               </Typography>
               <Button
                 variant="contained"
@@ -133,7 +132,7 @@ export default function WeeklyPlanner({ onDishSelect, onBack }: WeeklyPlannerPro
                   boxShadow: '0 4px 15px rgba(255,122,24,0.4)',
                 }}
               >
-                Подключить Premium
+                {t('planner_connect_premium')}
               </Button>
             </Box>
           </Box>
@@ -143,7 +142,7 @@ export default function WeeklyPlanner({ onDishSelect, onBack }: WeeklyPlannerPro
           open={paywallOpen}
           onClose={() => setPaywallOpen(false)}
           onLoginRequired={openAuth}
-          reason="Недельный планировщик и умный список покупок — только в Premium."
+          reason={t('planner_premium_reason')}
         />
       </>
     )
@@ -163,10 +162,10 @@ export default function WeeklyPlanner({ onDishSelect, onBack }: WeeklyPlannerPro
             startIcon={<ArrowBack />}
             sx={{ color: 'rgba(0,0,0,0.45)' }}
           >
-            Назад
+            {t('back')}
           </Button>
           <Typography variant="h5" sx={{ fontWeight: 700, color: '#1A1A1A' }}>
-            📅 Планировщик недели
+            📅 {t('planner_title')}
           </Typography>
         </Box>
 
@@ -219,7 +218,7 @@ export default function WeeklyPlanner({ onDishSelect, onBack }: WeeklyPlannerPro
                           variant="body2"
                           sx={{ fontWeight: 600, color: '#1A1A1A', flexGrow: 1, lineHeight: 1.35, fontSize: '0.875rem' }}
                         >
-                          {dish.name}
+                          {dishName(dish, lang)}
                         </Typography>
                         <Box sx={{ display: 'flex', gap: 0.5 }}>
                           <IconButton
@@ -277,23 +276,23 @@ export default function WeeklyPlanner({ onDishSelect, onBack }: WeeklyPlannerPro
         </Grid>
 
         <Dialog open={addDialog.open} onClose={() => setAddDialog({ open: false, day: null })}>
-          <DialogTitle sx={{ fontWeight: 700 }}>Выбрать блюдо</DialogTitle>
+          <DialogTitle sx={{ fontWeight: 700 }}>{t('planner_choose_dish')}</DialogTitle>
           <DialogContent sx={{ minWidth: 280, pt: 2 }}>
             {availableDishes.length === 0 ? (
               <Typography color="text.secondary" variant="body2" sx={{ mb: 2 }}>
-                Сначала выберите понравившиеся блюда через свайп
+                {t('planner_swipe_first')}
               </Typography>
             ) : (
               <FormControl fullWidth sx={{ mb: 2.5 }}>
-                <InputLabel>Блюдо</InputLabel>
+                <InputLabel>{t('planner_dish')}</InputLabel>
                 <Select
                   value={selectedDishId}
-                  label="Блюдо"
+                  label={t('planner_dish')}
                   onChange={(e) => setSelectedDishId(e.target.value as number)}
                 >
                   {availableDishes.map((d) => (
                     <MenuItem key={d.id} value={d.id}>
-                      {d.name}
+                      {dishName(d, lang)}
                     </MenuItem>
                   ))}
                 </Select>
@@ -306,7 +305,7 @@ export default function WeeklyPlanner({ onDishSelect, onBack }: WeeklyPlannerPro
               disabled={selectedDishId === '' || availableDishes.length === 0}
               sx={{ py: 1.25 }}
             >
-              Добавить
+              {t('planner_add')}
             </Button>
           </DialogContent>
         </Dialog>

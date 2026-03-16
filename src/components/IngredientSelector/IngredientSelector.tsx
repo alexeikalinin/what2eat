@@ -16,6 +16,8 @@ import { useAppSelector, useAppDispatch } from '../../hooks/redux'
 import { toggleIngredient, clearSelection } from '../../store/slices/ingredientsSlice'
 import { INGREDIENT_CATEGORIES } from '../../utils/constants'
 import { IngredientCategory } from '../../types'
+import { useLanguage } from '../../hooks/useLanguage'
+import { ingredientName } from '../../utils/lang'
 
 // Категории, несовместимые с вегетарианством/веганством
 const NON_VEGETARIAN_CATEGORIES: IngredientCategory[] = ['meat']
@@ -27,6 +29,7 @@ interface IngredientSelectorProps {
 
 export default function IngredientSelector({ hideTitle }: IngredientSelectorProps) {
   const dispatch = useAppDispatch()
+  const { t, lang } = useLanguage()
   const { ingredients, selectedIngredients } = useAppSelector(
     (state) => state.ingredients
   )
@@ -49,8 +52,10 @@ export default function IngredientSelector({ hideTitle }: IngredientSelectorProp
     }
 
     if (searchQuery) {
+      const q = searchQuery.toLowerCase()
       filtered = filtered.filter((ing) =>
-        ing.name.toLowerCase().includes(searchQuery.toLowerCase())
+        ing.name.toLowerCase().includes(q) ||
+        (ing.name_en && ing.name_en.toLowerCase().includes(q))
       )
     }
 
@@ -61,10 +66,8 @@ export default function IngredientSelector({ hideTitle }: IngredientSelectorProp
     dispatch(toggleIngredient(id))
   }
 
-  const selectedIngredientNames = useMemo(() => {
-    return ingredients
-      .filter((ing) => selectedIngredients.includes(ing.id))
-      .map((ing) => ing.name)
+  const selectedIngredientObjects = useMemo(() => {
+    return ingredients.filter((ing) => selectedIngredients.includes(ing.id))
   }, [ingredients, selectedIngredients])
 
   return (
@@ -75,13 +78,13 @@ export default function IngredientSelector({ hideTitle }: IngredientSelectorProp
           gutterBottom
           sx={{ fontWeight: 700, color: '#1A1A1A', mb: 3, letterSpacing: '-0.02em' }}
         >
-          Что есть в холодильнике?
+          {t('ingredients_title')}
         </Typography>
       )}
 
       <TextField
         fullWidth
-        placeholder="Поиск ингредиентов..."
+        placeholder={`${t('ingredients_search')}...`}
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}
         size="small"
@@ -102,13 +105,13 @@ export default function IngredientSelector({ hideTitle }: IngredientSelectorProp
         variant="scrollable"
         scrollButtons="auto"
       >
-        <Tab label="Все" value="all" />
+        <Tab label={t('ingredients_all')} value="all" />
         {Object.entries(INGREDIENT_CATEGORIES).map(([key, label]) => (
           <Tab key={key} label={label} value={key} />
         ))}
       </Tabs>
 
-      {selectedIngredientNames.length > 0 && (
+      {selectedIngredientObjects.length > 0 && (
         <Box sx={{ mb: 2 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
             <Typography
@@ -120,43 +123,40 @@ export default function IngredientSelector({ hideTitle }: IngredientSelectorProp
                 letterSpacing: '0.08em',
               }}
             >
-              Выбрано: {selectedIngredientNames.length}
+              {t('ingredients_selected')}: {selectedIngredientObjects.length}
             </Typography>
             <Button
               size="small"
               onClick={() => dispatch(clearSelection())}
               sx={{ fontSize: '0.75rem', color: 'rgba(0,0,0,0.4)', minWidth: 0, p: '2px 6px' }}
             >
-              Сбросить
+              {t('ingredients_reset')}
             </Button>
           </Box>
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
-            {selectedIngredientNames.map((name) => {
-              const ingredient = ingredients.find((ing) => ing.name === name)
-              return (
-                <motion.div
-                  key={name}
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0.8, opacity: 0 }}
-                  transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-                >
-                  <Chip
-                    label={name}
-                    onDelete={() => ingredient && handleToggle(ingredient.id)}
-                    sx={{
-                      background: 'linear-gradient(135deg, #FF7A18 0%, #FFB347 100%)',
-                      color: 'white',
-                      fontWeight: 600,
-                      '& .MuiChip-deleteIcon': {
-                        color: 'rgba(255,255,255,0.7)',
-                        '&:hover': { color: 'white' },
-                      },
-                    }}
-                  />
-                </motion.div>
-              )
-            })}
+            {selectedIngredientObjects.map((ing) => (
+              <motion.div
+                key={ing.id}
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.8, opacity: 0 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+              >
+                <Chip
+                  label={ingredientName(ing, lang)}
+                  onDelete={() => handleToggle(ing.id)}
+                  sx={{
+                    background: 'linear-gradient(135deg, #FF7A18 0%, #FFB347 100%)',
+                    color: 'white',
+                    fontWeight: 600,
+                    '& .MuiChip-deleteIcon': {
+                      color: 'rgba(255,255,255,0.7)',
+                      '&:hover': { color: 'white' },
+                    },
+                  }}
+                />
+              </motion.div>
+            ))}
           </Box>
         </Box>
       )}
@@ -196,7 +196,7 @@ export default function IngredientSelector({ hideTitle }: IngredientSelectorProp
                       fontSize: '0.85rem',
                     }}
                   >
-                    {ingredient.name}
+                    {ingredientName(ingredient, lang)}
                   </Typography>
                 </Box>
               </motion.div>
@@ -221,14 +221,14 @@ export default function IngredientSelector({ hideTitle }: IngredientSelectorProp
           }}
         >
           <Typography variant="caption" sx={{ color: '#16A34A', fontWeight: 600 }}>
-            🌱 {veganOnly ? 'Показаны только веганские ингредиенты' : 'Показаны только вегетарианские ингредиенты'}
+            🌱 {veganOnly ? t('ingredients_vegan_only') : t('ingredients_vegetarian_only')}
           </Typography>
         </Box>
       )}
 
       {filteredIngredients.length === 0 && (
         <Typography variant="body2" sx={{ color: 'rgba(0,0,0,0.3)', textAlign: 'center', mt: 4, py: 2 }}>
-          Ингредиенты не найдены
+          {t('ingredients_not_found')}
         </Typography>
       )}
     </Box>

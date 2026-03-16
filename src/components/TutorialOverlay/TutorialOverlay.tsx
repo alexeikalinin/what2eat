@@ -3,24 +3,9 @@ import { Box, Typography, Button } from '@mui/material'
 import { CameraAlt, Favorite, CalendarMonth } from '@mui/icons-material'
 import { motion, AnimatePresence } from 'framer-motion'
 import { setTutorialSeen } from './tutorialStorage'
+import { useLanguage } from '../../hooks/useLanguage'
 
-const steps = [
-  {
-    icon: CameraAlt,
-    title: 'Сфоткай холодильник',
-    text: 'Нажми на большую синюю кнопку и сфотографируй продукты — приложение само определит ингредиенты.',
-  },
-  {
-    icon: Favorite,
-    title: 'Свайпай рецепты',
-    text: 'Листай карточки влево и вправо: нравится — вправо, не подходит — влево. В конце увидишь подборку по вкусу.',
-  },
-  {
-    icon: CalendarMonth,
-    title: 'Планируй неделю',
-    text: 'Выбери блюда на каждый день в планировщике и собери список покупок одним тапом.',
-  },
-]
+const STEP_ICONS = [CameraAlt, Favorite, CalendarMonth]
 
 interface TutorialOverlayProps {
   onClose: () => void
@@ -29,6 +14,13 @@ interface TutorialOverlayProps {
 export default function TutorialOverlay({ onClose }: TutorialOverlayProps) {
   const [step, setStep] = useState(0)
   const [exiting, setExiting] = useState(false)
+  const { t } = useLanguage()
+
+  const steps = [
+    { icon: STEP_ICONS[0], title: t('tutorial_step1_title'), text: t('tutorial_step1_desc') },
+    { icon: STEP_ICONS[1], title: t('tutorial_step2_title'), text: t('tutorial_step2_desc') },
+    { icon: STEP_ICONS[2], title: t('tutorial_step3_title'), text: t('tutorial_step3_desc') },
+  ]
 
   const handleClose = () => {
     setExiting(true)
@@ -112,16 +104,16 @@ export default function TutorialOverlay({ onClose }: TutorialOverlayProps) {
         <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
           {step > 0 && (
             <Button variant="text" onClick={() => setStep((s) => s - 1)} sx={{ color: '#6C6C70', textTransform: 'none' }}>
-              Назад
+              {t('tutorial_prev')}
             </Button>
           )}
           {isLast ? (
             <Button variant="contained" onClick={handleClose} sx={{ background: 'linear-gradient(135deg, #FF7A18 0%, #FFB347 100%)', borderRadius: 3, textTransform: 'none', px: 3 }}>
-              Понял
+              {t('tutorial_done')}
             </Button>
           ) : (
             <Button variant="contained" onClick={() => setStep((s) => s + 1)} sx={{ background: 'linear-gradient(135deg, #FF7A18 0%, #FFB347 100%)', borderRadius: 3, textTransform: 'none', px: 3 }}>
-              Дальше
+              {t('tutorial_next')}
             </Button>
           )}
         </Box>

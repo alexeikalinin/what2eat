@@ -16,6 +16,7 @@ import { useAppDispatch } from '../../hooks/redux'
 import { loginWithEmail, signUpWithEmail, loginWithGoogle, refreshPlan } from '../../store/slices/userSlice'
 import { isSupabaseConfigured } from '../../services/supabase'
 import type { AppDispatch } from '../../store'
+import { useLanguage } from '../../hooks/useLanguage'
 
 type Mode = 'login' | 'signup'
 
@@ -33,7 +34,7 @@ async function handleEmailAuth(
   const thunk = mode === 'login' ? loginWithEmail : signUpWithEmail
   const result = await dispatch(thunk({ email, password }))
   if (thunk.rejected.match(result)) {
-    return (result.payload as string) ?? result.error?.message ?? 'Ошибка'
+    return (result.payload as string) ?? result.error?.message ?? null
   }
   const user = (result as { payload: { id: string } | null }).payload
   if (user?.id) {
@@ -44,6 +45,7 @@ async function handleEmailAuth(
 
 export default function AuthModal({ open, onClose }: AuthModalProps) {
   const dispatch = useAppDispatch()
+  const { t } = useLanguage()
   const [mode, setMode] = useState<Mode>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -57,7 +59,7 @@ export default function AuthModal({ open, onClose }: AuthModalProps) {
   const handleSubmit = async () => {
     if (!email.trim() || !password.trim()) return
     if (!supabaseReady) {
-      setError('Supabase не подключён. Заполните VITE_SUPABASE_URL и VITE_SUPABASE_ANON_KEY.')
+      setError(t('auth_supabase_fill_env'))
       return
     }
     setLoading(true)
@@ -68,7 +70,7 @@ export default function AuthModal({ open, onClose }: AuthModalProps) {
     if (err) {
       setError(err)
     } else if (mode === 'signup') {
-      setSuccessMsg('Проверьте почту — мы отправили письмо с подтверждением')
+      setSuccessMsg(t('auth_check_email_confirm'))
     } else {
       onClose()
     }
@@ -76,14 +78,14 @@ export default function AuthModal({ open, onClose }: AuthModalProps) {
 
   const handleGoogle = async () => {
     if (!supabaseReady) {
-      setError('Supabase не подключён. Заполните VITE_SUPABASE_URL и VITE_SUPABASE_ANON_KEY.')
+      setError(t('auth_supabase_fill_env'))
       return
     }
     setGoogleLoading(true)
     setError(null)
     const result = await dispatch(loginWithGoogle())
     if (loginWithGoogle.rejected.match(result)) {
-      setError((result.payload as string) ?? 'Ошибка входа через Google')
+      setError((result.payload as string) ?? t('auth_google_error'))
       setGoogleLoading(false)
     }
     // Если fulfilled — браузер редиректит на Google, loading останется true (OK)
@@ -114,7 +116,7 @@ export default function AuthModal({ open, onClose }: AuthModalProps) {
     >
       <Box sx={{ px: 3, pt: 3, pb: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Typography variant="h6" sx={{ fontWeight: 700 }}>
-          {mode === 'login' ? 'Войти' : 'Создать аккаунт'}
+          {mode === 'login' ? t('auth_login') : t('auth_register')}
         </Typography>
         <IconButton onClick={handleClose} size="small" sx={{ color: 'rgba(0,0,0,0.4)' }}>
           <Close />
@@ -124,7 +126,7 @@ export default function AuthModal({ open, onClose }: AuthModalProps) {
       <DialogContent sx={{ px: 3, pt: 1.5 }}>
         {!supabaseReady && (
           <Alert severity="warning" sx={{ mb: 2, fontSize: '0.82rem' }}>
-            Supabase не настроен. Для авторизации заполните .env переменные.
+            {t('auth_supabase_configure')}
           </Alert>
         )}
 
@@ -146,18 +148,18 @@ export default function AuthModal({ open, onClose }: AuthModalProps) {
             '&:hover': { borderColor: '#FF7A18', bgcolor: '#FFF8F0' },
           }}
         >
-          {googleLoading ? 'Перенаправляем…' : 'Войти через Google'}
+          {googleLoading ? `${t('auth_redirecting')}…` : t('auth_google')}
         </Button>
         <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary', textAlign: 'center', px: 1, mb: 2 }}>
-          Не видите свои аккаунты? Откройте сайт в браузере (Safari или Chrome), а не во встроенном окне мессенджера.
+          {t('auth_no_accounts')} {t('auth_open_in_browser')} {t('auth_browser_hint')}
         </Typography>
 
         <Divider sx={{ mb: 2.5 }}>
-          <Typography variant="caption" sx={{ color: 'rgba(0,0,0,0.4)' }}>или по email</Typography>
+          <Typography variant="caption" sx={{ color: 'rgba(0,0,0,0.4)' }}>{t('auth_or_email')}</Typography>
         </Divider>
 
         <TextField
-          label="Email"
+          label={t('auth_email')}
           type="email"
           fullWidth
           size="small"
@@ -169,7 +171,7 @@ export default function AuthModal({ open, onClose }: AuthModalProps) {
           disabled={loading}
         />
         <TextField
-          label="Пароль"
+          label={t('auth_password')}
           type="password"
           fullWidth
           size="small"
@@ -178,7 +180,7 @@ export default function AuthModal({ open, onClose }: AuthModalProps) {
           sx={{ mb: 2 }}
           onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
           autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-          helperText={mode === 'signup' ? 'Минимум 6 символов' : undefined}
+          helperText={mode === 'signup' ? t('auth_password_hint') : undefined}
           disabled={loading}
         />
 
@@ -208,30 +210,30 @@ export default function AuthModal({ open, onClose }: AuthModalProps) {
             mb: 2,
           }}
         >
-          {mode === 'login' ? 'Войти' : 'Зарегистрироваться'}
+          {mode === 'login' ? t('auth_login') : t('auth_submit_register')}
         </Button>
 
         <Box sx={{ textAlign: 'center', pb: 1 }}>
           {mode === 'login' ? (
             <Typography variant="body2" sx={{ color: 'rgba(0,0,0,0.55)' }}>
-              Нет аккаунта?{' '}
+              {t('auth_no_account')}{' '}
               <Button
                 size="small"
                 onClick={() => switchMode('signup')}
                 sx={{ p: 0, fontWeight: 600, color: '#FF7A18', minWidth: 0, textTransform: 'none', verticalAlign: 'baseline' }}
               >
-                Создать
+                {t('auth_register')}
               </Button>
             </Typography>
           ) : (
             <Typography variant="body2" sx={{ color: 'rgba(0,0,0,0.55)' }}>
-              Уже есть аккаунт?{' '}
+              {t('auth_have_account')}{' '}
               <Button
                 size="small"
                 onClick={() => switchMode('login')}
                 sx={{ p: 0, fontWeight: 600, color: '#FF7A18', minWidth: 0, textTransform: 'none', verticalAlign: 'baseline' }}
               >
-                Войти
+                {t('auth_login')}
               </Button>
             </Typography>
           )}
