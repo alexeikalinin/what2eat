@@ -2,6 +2,33 @@
 
 ---
 
+## [2026-03-16] feat: Automated image audit + EN translation fixes
+
+**Аудит изображений (135 блюд):**
+- Написан `scripts/audit-images.ts` — GPT-4o Vision проверяет каждое фото, DALL-E 3 генерирует новое при несоответствии
+- Исправлены 135 блюд с неправильными Unsplash фото (вино вместо яиц, карри вместо борща, и т.д.)
+- Все новые фото сохранены в Supabase Storage `dish-images/`
+
+**EN-режим исправления:**
+- Ингредиенты после AI-анализа фото теперь отображаются на английском (`ingredientName(ing, lang)`)
+- Сложность "Легко/Средне/Сложно" → "Easy/Medium/Hard" через `difficultyLabel()` во всех компонентах (SwipeCard, DishCard, RecipeView)
+- Варианты рецептов переведены через `RECIPE_TITLE_EN` map и `recipeTitle()`
+- Калории в RecipeView теперь считаются автоматически из ингредиентов (без загрузки фото)
+- Анимация ❤️ при свайпе вправо
+
+**Переводы описаний (170 блюд):**
+- Написан `scripts/translate-descriptions.ts` — GPT-4o-mini переводит батчами по 20 блюд
+- Все 170 блюд теперь имеют `description_en` в Supabase
+
+**Фикс селектора ингредиентов:**
+- `import_recipes.py` добавил ~950 ингредиентов с `show_in_selector=true`, переполнив лимит 1000 строк Supabase
+- Миграция 020: `show_in_selector=false` для id≥180 category='other'
+- Теперь видны все 6 категорий: овощи, мясо, крупы, молочные, специи, прочее
+
+**Файлы:** `scripts/audit-images.ts`, `scripts/translate-descriptions.ts`, `supabase/migrations/020_hide_recipe_only_ingredients.sql`, `src/components/DishList/DishCard.tsx`, `src/components/SwipeDeck/SwipeCard.tsx`, `src/components/RecipeView/RecipeView.tsx`, `src/services/openai.ts`, `src/store/slices/photoSlice.ts`, `src/utils/lang.ts`, `src/utils/imageUtils.ts`
+
+---
+
 ## [2026-03-15] fix: Pre-production QA — 4 бага исправлены
 
 **Проблема 1:** Снакбар-предупреждение о лимите свайпов показывал неверное число (на 1 меньше) — после `trackLocalSwipe()` лишнее `- 1` давало занижение.

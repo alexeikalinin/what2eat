@@ -2,63 +2,46 @@
 
 ## Дата: 2026-03-16
 
-## Статус: ЗАВЕРШЕНО (ожидает запуска migration 017 в Supabase)
+## Статус: ЗАВЕРШЕНО ✅
 
 ---
 
 ## Что сделано в этой сессии
 
-### 1. QA баги — исправлены
-- `SwipeDeck.tsx`: off-by-one в snackbar счётчике (`swipesRemaining() - 1` → `swipesRemaining()`)
-- `PhotoUpload.tsx`: HEIC silent fail на iOS (`file.type === ''`), clearPhoto на mount (QA 4.9), translate hardcoded strings
-- `Layout.tsx`: hardcoded 'Переключить на Русский' → `t('layout_switch_russian')`
-- `ru.ts`, `en.ts`: добавлены 8 новых ключей перевода
+### 1. Автоматический аудит изображений — 135 блюд исправлено
+- `scripts/audit-images.ts` — GPT-4o Vision (detail:low) проверяет каждое Unsplash фото
+- Оценка 1-10 по соответствию название ↔ фото, при score < 6 генерируется DALL-E 3
+- ASCII slugify для Supabase Storage (кириллица → `dish-{id}-{id}.png`)
+- 135 блюд заменены: вареные яйца → не бокал вина, борщ → не морковный суп, и т.д.
 
-### 2. Полный билингвал — завершено
-Все компоненты обновлены чтобы использовать `dishName(dish, lang)` и `ingredientName(ing, lang)`:
-- `SwipeCard.tsx` — dish name, alt, missing_ingredients
-- `WeeklyPlanner.tsx` — dish name в плане и в Select-меню
-- `ShoppingList.tsx` — ingredient name в списке
-- `IngredientSelector.tsx` — поиск работает по обоим языкам (ru + en), chips и grid переведены
-- `PhotoUpload.tsx` — менюшки add/replace ingredient показывают localized name
-- `QuickIdeas.tsx` — alt атрибут
+### 2. EN-режим — полные исправления
+- Ингредиенты после AI-анализа фото показываются на английском
+- Сложность: `DIFFICULTY_LABELS` → `difficultyLabel(t)` во всех компонентах (SwipeCard, DishCard, RecipeView)
+- Варианты рецептов: `RECIPE_TITLE_EN` map + `recipeTitle()` в lang.ts
+- Калории: автоподсчёт из ингредиентов рецепта без загрузки фото
+- Анимация ❤️ при свайпе вправо (framer-motion)
 
-Добавлены:
-- `utils/lang.ts`: функция `ingredientName(ingredient, lang): string`
-- `types/ingredient.ts`: поле `name_en?: string | null`
-- `services/ingredients.ts`: все 3 функции выбирают `name_en` из Supabase
-- `services/dishes.ts`: все SELECT queries включают `name_en, description_en` для dishes и `name_en` для ingredients
+### 3. Перевод описаний 170 блюд
+- `scripts/translate-descriptions.ts` — GPT-4o-mini, батчи по 20, ~$0.01
+- Все 170 блюд теперь имеют `description_en` в Supabase
 
-### 3. Migration 017 — создана, НЕ запущена в Supabase
-Файл: `supabase/migrations/017_bilingual_content.sql`
-
-**Важно:** В Supabase уже есть:
-- Колонки `dishes.name_en`, `dishes.description_en` (уже созданы ранее)
-- Колонка `ingredients.name_en` (уже создана, все 1239 ингредиентов переведены)
-- 166/170 блюд уже переведены
-
-**Осталось 4 блюда без перевода:** Дзадзики, Хумус, Картофель со свининой, Рататуй
-
-Migration 017 нужно запустить в Supabase SQL Editor чтобы:
-1. Добавить 4 недостающих перевода (Хумус и Рататуй есть в migration, ещё нужно добавить Дзадзики и Картофель со свининой)
-2. ALTER TABLE безопасны (IF NOT EXISTS)
+### 4. Фикс селектора ингредиентов (овощи не отображались)
+- Причина: `import_recipes.py` добавил ~950 recipe-only ингредиентов с `show_in_selector=true`
+- Supabase лимит 1000 строк обрезал vegetables/spices (алфавитно после 'other')
+- Migration 020: `UPDATE ingredients SET show_in_selector=false WHERE id>=180 AND category='other'`
+- Результат: 70 ингредиентов в селекторе, все 6 категорий видны
 
 ---
 
-## Состояние БД (проверено через API)
-- `dishes`: 170 записей, 166 с `name_en`
-- `ingredients`: 1239 записей, все с `name_en` ✅
-- Колонки `name_en`, `description_en` в dishes уже существуют ✅
-- Колонка `name_en` в ingredients уже существует ✅
-
----
-
-## Следующий шаг
-1. В `supabase/migrations/017_bilingual_content.sql` добавить переводы для Дзадзики и Картофель со свининой
-2. Запустить migration 017 в Supabase SQL Editor (или через CLI)
-3. Проверить работу переключения языков в браузере
-
----
+## Состояние БД
+- `dishes`: 170 записей, все с `name_en` ✅, все с `description_en` ✅
+- `ingredients`: ~1300 записей, все с `name_en` ✅, 70 в селекторе
+- `dish-images` bucket: 150+ DALL-E 3 фото ✅
+- Migrations applied: 001–020
 
 ## Сборка
-`npm run build` — ✅ чистая сборка, только pre-existing chunk size warning
+`npm run build` — ✅ чистая сборка
+
+## Git
+Последний коммит: `8652ba9 feat: translate all 170 dish descriptions to English`
+Все изменения запушены на `main` → Vercel деплой автоматически.
