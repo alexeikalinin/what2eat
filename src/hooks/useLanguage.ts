@@ -8,7 +8,7 @@ function getInitialLang(): Language {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored === 'en' || stored === 'ru') return stored;
   } catch {}
-  return 'ru';
+  return 'en';
 }
 
 // Singleton state so all components share the same language
