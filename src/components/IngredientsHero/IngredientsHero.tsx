@@ -27,7 +27,8 @@ export default function IngredientsHero({ onPhotoClick, onCameraCapture, preview
     const file = e.target.files?.[0]
     if (file && onCameraCapture) {
       onCameraCapture(file)
-      e.target.value = ''
+      // Reset after a tick — resetting synchronously can invalidate File on iOS Safari
+      setTimeout(() => { e.target.value = '' }, 100)
     }
   }
   return (
@@ -144,12 +145,13 @@ export default function IngredientsHero({ onPhotoClick, onCameraCapture, preview
 
             <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
               {/* Hidden camera input */}
+              {/* Visually hidden — display:none breaks onChange on iOS Safari 17+ with capture */}
               <input
                 ref={cameraInputRef}
                 type="file"
                 accept="image/*"
                 capture="environment"
-                style={{ display: 'none' }}
+                style={{ position: 'fixed', top: '-200px', opacity: 0, width: '1px', height: '1px' }}
                 onChange={handleCameraFile}
               />
               <Button

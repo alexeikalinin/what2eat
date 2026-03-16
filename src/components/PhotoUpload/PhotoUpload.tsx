@@ -65,8 +65,13 @@ export default function PhotoUpload({ onIngredientsConfirmed, onBack, initialFil
   const handleFile = useCallback(
     async (file: File) => {
       // HEIC/HEIF на iOS Safari имеет type='' — проверяем расширение тоже
+      // Android camera apps may also return type='' with a valid image file
       const isHeicFile = /\.(heic|heif)$/i.test(file.name)
-      if (!file.type.startsWith('image/') && !isHeicFile) {
+      const looksLikeImage = file.type.startsWith('image/') ||
+        isHeicFile ||
+        file.type === '' || // camera capture on Android often returns empty type
+        /\.(jpe?g|png|gif|webp|bmp|tiff?)$/i.test(file.name)
+      if (!looksLikeImage) {
         dispatch(setError(t('photo_format_unsupported')))
         return
       }
@@ -300,11 +305,12 @@ export default function PhotoUpload({ onIngredientsConfirmed, onBack, initialFil
           }}
           onClick={() => fileInputRef.current?.click()}
         >
+          {/* Visually hidden — display:none breaks onChange on iOS Safari 17+ */}
           <input
             ref={fileInputRef}
             type="file"
             accept="image/*,.heic,.heif"
-            style={{ display: 'none' }}
+            style={{ position: 'fixed', top: '-200px', opacity: 0, width: '1px', height: '1px' }}
             onChange={handleFileInput}
           />
           {previewUrl ? (
