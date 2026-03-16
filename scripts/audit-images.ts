@@ -79,19 +79,24 @@ async function sbPatch(table: string, id: number, body: Record<string, unknown>)
 }
 
 async function sbUpload(fileName: string, imageBuffer: Buffer): Promise<string> {
-  const r = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${fileName}`, {
-    method: 'POST',
-    headers: {
-      apikey: SUPABASE_SERVICE_KEY,
-      Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
-      'Content-Type': 'image/png',
-      'Cache-Control': '3600',
-    },
-    body: imageBuffer,
-  })
-  if (!r.ok) {
-    const err = await r.text()
-    throw new Error(`Upload failed: ${err}`)
+  // Try POST first, fall back to PUT (upsert) if file already exists
+  for (const method of ['POST', 'PUT'] as const) {
+    const r = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${fileName}`, {
+      method,
+      headers: {
+        apikey: SUPABASE_SERVICE_KEY,
+        Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
+        'Content-Type': 'image/png',
+        'Cache-Control': '3600',
+        ...(method === 'PUT' ? { 'x-upsert': 'true' } : {}),
+      },
+      body: imageBuffer,
+    })
+    if (r.ok) break
+    if (method === 'PUT') {
+      const err = await r.text()
+      throw new Error(`Upload failed: ${err}`)
+    }
   }
   return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${fileName}`
 }
@@ -179,12 +184,15 @@ async function downloadImage(url: string): Promise<Buffer> {
   return Buffer.from(await res.arrayBuffer())
 }
 
-function slugify(name: string): string {
-  return name
+function slugify(id: number, name: string): string {
+  // Use only ASCII to avoid Supabase Storage InvalidKey for Cyrillic names
+  const ascii = name
     .toLowerCase()
-    .replace(/[^а-яёa-z0-9]+/gi, '-')
+    .replace(/[^a-z0-9]+/gi, '-')
     .replace(/^-+|-+$/g, '')
-    .substring(0, 50)
+    .substring(0, 30)
+  const base = ascii || `dish-${id}`
+  return `${base}-${id}`
 }
 
 const delay = (ms: number) => new Promise(r => setTimeout(r, ms))
@@ -253,7 +261,7 @@ async function main() {
 
       const entry: AuditEntry = { id: dish.id, name: dish.name, url, ...result }
 
-      if (!result.match || result.score < 5) {
+      if (result.score < 6) {
         mismatches++
         console.log(R(`    ⚠️  MISMATCH: "${dish.name}" — URL: ${url.substring(0, 70)}…`))
 
@@ -264,8 +272,8 @@ async function main() {
             if (!dalleUrl) throw new Error('Empty DALL-E URL')
 
             const buffer = await downloadImage(dalleUrl)
-            const slug = slugify(dish.name)
-            const fileName = `${slug}-${Date.now()}.png`
+            const slug = slugify(dish.id, dish.name)
+            const fileName = `${slug}.png`
             const publicUrl = await sbUpload(fileName, buffer)
 
             await sbPatch('dishes', dish.id, { image_url: publicUrl })
