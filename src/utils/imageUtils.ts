@@ -120,23 +120,33 @@ const DISH_IMAGE_OVERRIDES: { pattern: RegExp; url: string }[] = [
   // Яйца Бенедикт / пашот (до общего яиц)
   { pattern: /бенедикт|пашот/i, url: 'https://images.unsplash.com/photo-1608039829572-78524f79c4c7?w=400&h=520&fit=crop&q=80' },
   // Шакшука (яйца в томате — до общего яиц)
-  { pattern: /шакшук/i, url: 'https://images.unsplash.com/photo-1482049016688-2d3e1b311543?w=400&h=520&fit=crop&q=80' },
+  { pattern: /шакшук/i, url: 'https://images.unsplash.com/photo-1590330297626-d7aff25a0431?w=400&h=520&fit=crop&q=80' },
   // Омлет (до общего яиц)
   { pattern: /омлет/i, url: 'https://images.unsplash.com/photo-1510693206972-df098062cb71?w=400&h=520&fit=crop&q=80' },
-  // Вареные яйца (до общего яиц)
-  { pattern: /вареные? яйц|яйц.{0,8}вар/i, url: 'https://images.unsplash.com/photo-1582169296194-e4d644c48063?w=400&h=520&fit=crop&q=80' },
-  // Яичница / глазунья
-  { pattern: /яичниц|глазунь|яйц/i, url: 'https://images.unsplash.com/photo-1482049016688-2d3e1b311543?w=400&h=520&fit=crop&q=80' },
+  // Вареные яйца (до общего яичница)
+  { pattern: /вареные? яйц|яйц.{0,8}вар/i, url: 'https://images.unsplash.com/photo-1474722883778-792e7990302f?w=400&h=520&fit=crop&q=80' },
+  // Яичница с помидорами (до общей яичницы)
+  { pattern: /яичниц.{0,15}помидор|яичниц.{0,15}томат/i, url: 'https://images.unsplash.com/photo-1588166524941-3bf61a9c41db?w=400&h=520&fit=crop&q=80' },
+  // Яичница с колбасой / беконом
+  { pattern: /яичниц.{0,15}колбас|яичниц.{0,15}бекон/i, url: 'https://images.unsplash.com/photo-1476224203421-9ac39bcb3df1?w=400&h=520&fit=crop&q=80' },
+  // Яичница с грибами
+  { pattern: /яичниц.{0,15}гриб/i, url: 'https://images.unsplash.com/photo-1607532941433-304659e8198a?w=400&h=520&fit=crop&q=80' },
+  // Яичница / глазунья (общая)
+  { pattern: /яичниц|глазунь/i, url: 'https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400&h=520&fit=crop&q=80' },
 
   // Паэлья (до риса)
   { pattern: /паэл/i, url: 'https://images.unsplash.com/photo-1534080564583-6be75777b70a?w=400&h=520&fit=crop&q=80' },
   // Ризотто (до риса)
   { pattern: /ризотто/i, url: 'https://images.unsplash.com/photo-1476124369491-e7addf5db371?w=400&h=520&fit=crop&q=80' },
+  // Жареный рис с яйцом (до общего риса)
+  { pattern: /жарен.{0,8}рис/i, url: 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=400&h=520&fit=crop&q=80' },
 
   // Лагман (до макарон/лапши)
   { pattern: /лагман/i, url: 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=400&h=520&fit=crop&q=80' },
   // Пад Тай (до курицы! содержит "курицей" в названии)
-  { pattern: /пад.?тай/i, url: 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=400&h=520&fit=crop&q=80' },
+  { pattern: /пад.?тай/i, url: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=400&h=520&fit=crop&q=80' },
+  // Удон (лапша удон — до общей лапши)
+  { pattern: /удон/i, url: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=400&h=520&fit=crop&q=80' },
   // Буррито (до курицы; исправлена опечатка буррит vs бурит)
   { pattern: /буррит/i, url: 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=400&h=520&fit=crop&q=80' },
   // Кесадилья (до курицы)
@@ -147,15 +157,20 @@ const DISH_IMAGE_OVERRIDES: { pattern: RegExp; url: string }[] = [
   { pattern: /тажин|таджин/i, url: 'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=400&h=520&fit=crop&q=80' },
   // Сациви, Паприкаш (Чкмерули — есть DALL-E в Supabase Storage, убран из override)
   { pattern: /сациви|паприкаш/i, url: 'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=400&h=520&fit=crop&q=80' },
+  // Курица терияки (до общей курицы)
+  { pattern: /терияки/i, url: 'https://images.unsplash.com/photo-1547592180-85f173990554?w=400&h=520&fit=crop&q=80' },
 
   // Семга / лосось (до общей рыбы)
   { pattern: /сёмг|семг|лосос/i, url: 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=400&h=520&fit=crop&q=80' },
+
+  // Уха (до общего супа)
+  { pattern: /уха/i, url: 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=400&h=520&fit=crop&q=80' },
 
   // Творожная запеканка (до общей запеканки → картошка)
   { pattern: /творог.{0,8}запеканк|запеканк.{0,8}творог/i, url: 'https://images.unsplash.com/photo-1504754524776-8f4f37790ca0?w=400&h=520&fit=crop&q=80' },
 
   // Гречка с грибами (до общей гречки)
-  { pattern: /гречк.{0,8}гриб|гриб.{0,8}гречк/i, url: 'https://images.unsplash.com/photo-1574484284002-952d92456975?w=400&h=520&fit=crop&q=80' },
+  { pattern: /гречк.{0,8}гриб|гриб.{0,8}гречк/i, url: 'https://images.unsplash.com/photo-1534939561126-855b8675edd7?w=400&h=520&fit=crop&q=80' },
 
   // Тушёная капуста (до общей капусты в голубцах)
   { pattern: /капуст.{0,15}туш|туш.{0,15}капуст/i, url: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400&h=520&fit=crop&q=80' },
@@ -166,20 +181,54 @@ const DISH_IMAGE_OVERRIDES: { pattern: RegExp; url: string }[] = [
   // Гуляш (до общей говядины/свинины)
   { pattern: /гуляш/i, url: 'https://images.unsplash.com/photo-1529042410759-befb1204b468?w=400&h=520&fit=crop&q=80' },
 
+  // Чили кон карне (до общего чили)
+  { pattern: /чили.{0,5}кон.{0,5}карн/i, url: 'https://images.unsplash.com/photo-1589187155587-a6e1a1af65f6?w=400&h=520&fit=crop&q=80' },
+
+  // Картофельное пюре (до общего картофеля)
+  { pattern: /картофельное? пюре|пюре.{0,15}картоф/i, url: 'https://images.unsplash.com/photo-1571167366136-f4b1eb35b13e?w=400&h=520&fit=crop&q=80' },
+  // Картофельная запеканка (до общего картофеля)
+  { pattern: /картофель.{0,10}запеканк|картофельная? запеканк/i, url: 'https://images.unsplash.com/photo-1585032226651-759b368d7246?w=400&h=520&fit=crop&q=80' },
+
+  // Паста Болоньезе (до общей пасты)
+  { pattern: /болонь/i, url: 'https://images.unsplash.com/photo-1633337474564-1d9478ca4e2e?w=400&h=520&fit=crop&q=80' },
+  // Паста Карбонара (до общей пасты)
+  { pattern: /карбонар/i, url: 'https://images.unsplash.com/photo-1612892483236-52d32a0e0ac1?w=400&h=520&fit=crop&q=80' },
+  // Ньокки (до общей пасты)
+  { pattern: /ньокк/i, url: 'https://images.unsplash.com/photo-1473093295043-cdd812d0e601?w=400&h=520&fit=crop&q=80' },
+  // Макароны с сыром (до общей пасты)
+  { pattern: /макарон.{0,10}сыр|mac.{0,5}cheese/i, url: 'https://images.unsplash.com/photo-1528736235302-52922df5c122?w=400&h=520&fit=crop&q=80' },
+  // Паста с грибами / сливочная (до общей пасты)
+  { pattern: /паста.{0,15}гриб|паста.{0,15}сливоч/i, url: 'https://images.unsplash.com/photo-1555949258-eb67b1ef0ceb?w=400&h=520&fit=crop&q=80' },
+  // Макароны с грибами (до общих макарон)
+  { pattern: /макарон.{0,15}гриб/i, url: 'https://images.unsplash.com/photo-1555949258-eb67b1ef0ceb?w=400&h=520&fit=crop&q=80' },
+
+  // Окрошка (до общего супа)
+  { pattern: /окрошк/i, url: 'https://images.unsplash.com/photo-1504754524776-8f4f37790ca0?w=400&h=520&fit=crop&q=80' },
+  // Суп из чечевицы / минестроне (до общего супа)
+  { pattern: /чечевиц|минестрон/i, url: 'https://images.unsplash.com/photo-1476124369491-e7addf5db371?w=400&h=520&fit=crop&q=80' },
+  // Суп грибной (до общего супа)
+  { pattern: /суп.{0,10}гриб|гриб.{0,10}суп/i, url: 'https://images.unsplash.com/photo-1534939561126-855b8675edd7?w=400&h=520&fit=crop&q=80' },
+
+  // Овсяная каша (до общей каши и гречки)
+  { pattern: /овсян|овсяная? каш/i, url: 'https://images.unsplash.com/photo-1517673400267-0251440c45dc?w=400&h=520&fit=crop&q=80' },
+  // Манная каша (до общей каши)
+  { pattern: /манн/i, url: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=520&fit=crop&q=80' },
+  // Рисовая каша (до общего риса)
+  { pattern: /рисовая? каш/i, url: 'https://images.unsplash.com/photo-1536304993881-ff86e0c9c5e7?w=400&h=520&fit=crop&q=80' },
+  // Пшённая каша
+  { pattern: /пшённ|пшенн/i, url: 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=400&h=520&fit=crop&q=80' },
+
   // ── КАТЕГОРИИ БЛЮД ──
 
   // Супы
   { pattern: /борщ/i, url: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?w=400&h=520&fit=crop&q=80' },
   { pattern: /щи|рассольник|солянка|харчо/i, url: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?w=400&h=520&fit=crop&q=80' },
-  { pattern: /минестрон/i, url: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?w=400&h=520&fit=crop&q=80' },
-  { pattern: /окрошк/i, url: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?w=400&h=520&fit=crop&q=80' },
   { pattern: /газпачо/i, url: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?w=400&h=520&fit=crop&q=80' },
-  { pattern: /фо.?бо/i, url: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?w=400&h=520&fit=crop&q=80' },
-  { pattern: /чечевиц/i, url: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?w=400&h=520&fit=crop&q=80' },
-  { pattern: /суп|бульон|уха|похлёб/i, url: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?w=400&h=520&fit=crop&q=80' },
+  { pattern: /фо.?бо/i, url: 'https://images.unsplash.com/photo-1559628233-100c798642d7?w=400&h=520&fit=crop&q=80' },
+  { pattern: /суп|бульон|похлёб/i, url: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?w=400&h=520&fit=crop&q=80' },
 
-  // Паста / макароны
-  { pattern: /паста|спагетти|феттучин|тальятелл|карбонар|болонь/i, url: 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=400&h=520&fit=crop&q=80' },
+  // Паста / макароны (дифференцированные, общий — последний)
+  { pattern: /паста|спагетти|феттучин|тальятелл/i, url: 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=400&h=520&fit=crop&q=80' },
   { pattern: /макарон|лапш/i, url: 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=400&h=520&fit=crop&q=80' },
 
   // Пицца
@@ -215,8 +264,11 @@ const DISH_IMAGE_OVERRIDES: { pattern: RegExp; url: string }[] = [
   // Блины / оладьи / драники
   { pattern: /блин|оладь|панкейк|драник/i, url: 'https://images.unsplash.com/photo-1565299543923-37dd37887442?w=400&h=520&fit=crop&q=80' },
 
-  // Каши / гречка
-  { pattern: /гречк|каша|овсян|манн/i, url: 'https://images.unsplash.com/photo-1574484284002-952d92456975?w=400&h=520&fit=crop&q=80' },
+  // Каши / гречка (общие — после специфичных выше)
+  { pattern: /гречк|каша/i, url: 'https://images.unsplash.com/photo-1574484284002-952d92456975?w=400&h=520&fit=crop&q=80' },
+
+  // Яйца (общий паттерн — после всех специфичных выше)
+  { pattern: /яйц/i, url: 'https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400&h=520&fit=crop&q=80' },
 
   // Салаты
   { pattern: /салат/i, url: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&h=520&fit=crop&q=80' },
@@ -240,6 +292,8 @@ const DISH_IMAGE_OVERRIDES: { pattern: RegExp; url: string }[] = [
   // Бургер
   { pattern: /бургер/i, url: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&h=520&fit=crop&q=80' },
 
+  // Авокадо тост (до общего авокадо)
+  { pattern: /авокадо.{0,10}тост|тост.{0,10}авокадо/i, url: 'https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400&h=520&fit=crop&q=80' },
   // Авокадо
   { pattern: /авокадо/i, url: 'https://images.unsplash.com/photo-1543362906-acfc16c67564?w=400&h=520&fit=crop&q=80' },
 
@@ -262,7 +316,7 @@ const DISH_IMAGE_OVERRIDES: { pattern: RegExp; url: string }[] = [
   { pattern: /тако|бурит[^о]|энчилад|начос/i, url: 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=400&h=520&fit=crop&q=80' },
 
   // Рагу / рататуй / овощные
-  { pattern: /рагу|рататуй|аджапсандал|чили.кон/i, url: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&h=520&fit=crop&q=80' },
+  { pattern: /рагу|рататуй|аджапсандал/i, url: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&h=520&fit=crop&q=80' },
 
   // Дзадзики
   { pattern: /дзадзики/i, url: 'https://images.unsplash.com/photo-1517191434949-5e90cd67d2b6?w=400&h=520&fit=crop&q=80' },
