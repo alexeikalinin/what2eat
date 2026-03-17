@@ -57,11 +57,15 @@ export const loginWithGoogle = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     // redirectTo должен совпадать с одним из Redirect URLs в Supabase Dashboard → Auth → URL Configuration
     const redirectTo = typeof window !== 'undefined' ? window.location.origin : ''
-    const { error } = await supabase.auth.signInWithOAuth({
+    const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo },
+      options: { redirectTo, skipBrowserRedirect: true },
     })
     if (error) return rejectWithValue(translateAuthError(error.message))
+    // Явный редирект — не полагаемся на внутренний механизм Supabase
+    if (data?.url && typeof window !== 'undefined') {
+      window.location.href = data.url
+    }
   }
 )
 
