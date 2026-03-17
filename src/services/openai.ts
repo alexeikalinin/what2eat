@@ -76,7 +76,7 @@ ${ingredientNames.join(', ')}
       {
         role: 'user',
         content: [
-          { type: 'image_url', image_url: { url: `data:${mimeType};base64,${base64}`, detail: 'low' } },
+          { type: 'image_url', image_url: { url: `data:${mimeType};base64,${base64}`, detail: 'high' } },
           { type: 'text', text: prompt },
         ],
       },
