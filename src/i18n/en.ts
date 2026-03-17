@@ -41,6 +41,8 @@ const en = {
   tutorial_prev: 'Back',
   tutorial_next: 'Next',
   tutorial_done: 'Got it',
+  tutorial_auth_title: 'Sign in to your account',
+  tutorial_auth_desc: 'Save your meal plans and sync them across all devices',
   auth_login: 'Log in',
   auth_register: 'Create an account',
   auth_google: 'Log in with Google',

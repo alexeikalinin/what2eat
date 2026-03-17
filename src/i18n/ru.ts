@@ -48,6 +48,8 @@ const ru = {
   tutorial_prev: 'Назад',
   tutorial_next: 'Дальше',
   tutorial_done: 'Понял',
+  tutorial_auth_title: 'Войдите в аккаунт',
+  tutorial_auth_desc: 'Сохраняйте планы питания и синхронизируйте их на всех устройствах',
 
   // ── Auth Modal ───────────────────────────────────────────────────────────
   auth_login: 'Войти',
