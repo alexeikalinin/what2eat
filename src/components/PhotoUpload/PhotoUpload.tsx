@@ -119,7 +119,7 @@ export default function PhotoUpload({ onIngredientsConfirmed, onBack, initialFil
           setPaywallOpen(true)
           return
         }
-        const ingredientNames = ingredients.map((i) => i.name)
+        const ingredientNames = ingredients.filter((i) => i.show_in_selector).map((i) => i.name)
         const result = await dispatch(analyzeIngredients({ base64, mimeType, ingredientNames }))
         if (analyzeIngredients.fulfilled.match(result)) {
           setSelectedNames(new Set(result.payload))
