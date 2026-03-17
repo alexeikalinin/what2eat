@@ -73,6 +73,7 @@ export default function TutorialOverlay({ onClose }: TutorialOverlayProps) {
       const user = (result as { payload: { id: string } | null }).payload
       if (user?.id) dispatch(refreshPlan(user.id))
       if (authMode === 'signup') {
+        setTutorialSeen() // при возврате после подтверждения email туториал не покажется снова
         setSuccessMsg(t('auth_check_email_confirm'))
       } else {
         handleClose()

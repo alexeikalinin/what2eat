@@ -15,7 +15,7 @@ import { supabase, isSupabaseConfigured } from './services/supabase'
 import Layout from './components/Layout'
 import IngredientSelector from './components/IngredientSelector'
 import IngredientsHero from './components/IngredientsHero'
-import TutorialOverlay, { getTutorialSeen } from './components/TutorialOverlay'
+import TutorialOverlay, { getTutorialSeen, setTutorialSeen } from './components/TutorialOverlay'
 import RecipeView from './components/RecipeView'
 import SearchFilters from './components/SearchFilters'
 import SwipeDeck from './components/SwipeDeck'
@@ -84,6 +84,8 @@ function App() {
       dispatch(setUser(session?.user ?? null))
       if (session?.user) {
         dispatch(refreshPlan(session.user.id))
+        setTutorialSeen()
+        setShowTutorial(false)
       }
     })
     return () => subscription.unsubscribe()
