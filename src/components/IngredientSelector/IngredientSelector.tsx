@@ -17,6 +17,7 @@ import { toggleIngredient, clearSelection } from '../../store/slices/ingredients
 import { INGREDIENT_CATEGORIES } from '../../utils/constants'
 import { IngredientCategory } from '../../types'
 import { useLanguage } from '../../hooks/useLanguage'
+import { TranslationKeys } from '../../i18n'
 import { ingredientName } from '../../utils/lang'
 
 // Категории, несовместимые с вегетарианством/веганством
@@ -106,8 +107,8 @@ export default function IngredientSelector({ hideTitle }: IngredientSelectorProp
         scrollButtons="auto"
       >
         <Tab label={t('ingredients_all')} value="all" />
-        {Object.entries(INGREDIENT_CATEGORIES).map(([key, label]) => (
-          <Tab key={key} label={label} value={key} />
+        {Object.keys(INGREDIENT_CATEGORIES).map((key) => (
+          <Tab key={key} label={t(`ingredients_cat_${key}` as TranslationKeys)} value={key} />
         ))}
       </Tabs>
 
