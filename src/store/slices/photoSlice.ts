@@ -24,15 +24,15 @@ export const analyzeIngredients = createAsyncThunk(
 
 export const analyzeCalories = createAsyncThunk(
   'photo/analyzeCalories',
-  async ({ base64, mimeType }: { base64: string; mimeType: string }) => {
-    return await estimateCaloriesFromImage(base64, mimeType)
+  async ({ base64, mimeType, lang }: { base64: string; mimeType: string; lang?: 'ru' | 'en' }) => {
+    return await estimateCaloriesFromImage(base64, mimeType, lang)
   }
 )
 
 export const analyzeCaloriesFromRecipe = createAsyncThunk(
   'photo/analyzeCaloriesFromRecipe',
-  async ({ dishName, ingredients }: { dishName: string; ingredients: { name: string; quantity: number; unit: string }[] }) => {
-    return await estimateCaloriesFromRecipe(dishName, ingredients)
+  async ({ dishName, ingredients, lang }: { dishName: string; ingredients: { name: string; quantity: number; unit: string }[]; lang?: 'ru' | 'en' }) => {
+    return await estimateCaloriesFromRecipe(dishName, ingredients, lang)
   }
 )
 

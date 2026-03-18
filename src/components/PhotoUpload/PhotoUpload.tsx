@@ -132,7 +132,7 @@ export default function PhotoUpload({ onIngredientsConfirmed, onBack, initialFil
           setPaywallOpen(true)
           return
         }
-        dispatch(analyzeCalories({ base64, mimeType }))
+        dispatch(analyzeCalories({ base64, mimeType, lang }))
       }
     },
     [dispatch, ingredients, tab, canUseAIPhoto, canUseCalories, trackLocalAiPhoto, DAILY_AI_PHOTO_LIMIT]

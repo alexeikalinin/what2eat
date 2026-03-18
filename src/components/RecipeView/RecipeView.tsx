@@ -56,7 +56,7 @@ export default function RecipeView({ onBack }: RecipeViewProps) {
       quantity: i.quantity,
       unit: i.unit,
     })) ?? []
-    dispatch(analyzeCaloriesFromRecipe({ dishName: currentRecipe?.dish_name ?? '', ingredients }))
+    dispatch(analyzeCaloriesFromRecipe({ dishName: currentRecipe?.dish_name ?? '', ingredients, lang }))
   }
 
   const getDifficultyColor = (difficulty: Difficulty) => {

@@ -95,9 +95,16 @@ ${ingredientNames.join(', ')}
 
 export async function estimateCaloriesFromImage(
   base64: string,
-  mimeType: string
+  mimeType: string,
+  lang: 'ru' | 'en' = 'ru'
 ): Promise<CalorieEstimate> {
-  const prompt = `Посмотри на фото блюда или продукта и оцени его питательную ценность на одну порцию.
+  const isEn = lang === 'en'
+  const prompt = isEn
+    ? `Look at the photo of the dish or food and estimate its nutritional value per serving.
+Return ONLY a JSON object in this format:
+{"calories": <number>, "protein": <g>, "fat": <g>, "carbs": <g>, "description": "<brief description of the dish in English>"}
+No explanations, only JSON.`
+    : `Посмотри на фото блюда или продукта и оцени его питательную ценность на одну порцию.
 Верни ТОЛЬКО JSON объект в формате:
 {"calories": <число>, "protein": <г>, "fat": <г>, "carbs": <г>, "description": "<краткое описание блюда на русском>"}
 Без пояснений, только JSON.`
@@ -129,10 +136,20 @@ export async function estimateCaloriesFromImage(
 
 export async function estimateCaloriesFromRecipe(
   dishName: string,
-  ingredients: { name: string; quantity: number; unit: string }[]
+  ingredients: { name: string; quantity: number; unit: string }[],
+  lang: 'ru' | 'en' = 'ru'
 ): Promise<CalorieEstimate> {
+  const isEn = lang === 'en'
   const list = ingredients.map((i) => `${i.name} — ${i.quantity} ${i.unit}`).join('\n')
-  const prompt = `Оцени питательную ценность блюда «${dishName}» на одну порцию.
+  const prompt = isEn
+    ? `Estimate the nutritional value of the dish "${dishName}" per serving.
+Ingredients:
+${list}
+
+Return ONLY a JSON object in this format:
+{"calories": <number>, "protein": <g>, "fat": <g>, "carbs": <g>, "description": "<brief description in English>"}
+No explanations, only JSON.`
+    : `Оцени питательную ценность блюда «${dishName}» на одну порцию.
 Ингредиенты:
 ${list}
 
