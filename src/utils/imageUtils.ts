@@ -1,8 +1,8 @@
 import heic2any from 'heic2any'
 
 /** Максимальная сторона изображения для API (OpenAI принимает, но большие файлы дают 400 при лимитах). */
-const MAX_IMAGE_SIDE = 1024
-const JPEG_QUALITY = 0.85
+const MAX_IMAGE_SIDE = 2048
+const JPEG_QUALITY = 0.92
 
 function isHeic(file: File): boolean {
   return (

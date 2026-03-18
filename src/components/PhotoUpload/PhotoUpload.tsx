@@ -119,10 +119,36 @@ export default function PhotoUpload({ onIngredientsConfirmed, onBack, initialFil
           setPaywallOpen(true)
           return
         }
-        const ingredientNames = ingredients.filter((i) => i.show_in_selector).map((i) => i.name)
-        const result = await dispatch(analyzeIngredients({ base64, mimeType, ingredientNames }))
+        const result = await dispatch(analyzeIngredients({ base64, mimeType, ingredientNames: [] }))
         if (analyzeIngredients.fulfilled.match(result)) {
-          setSelectedNames(new Set(result.payload))
+          // GPT вернул свободные названия — матчим с БД (fuzzy, case-insensitive)
+          const freeNames: string[] = result.payload
+          const matched = new Set<string>()
+          const custom: string[] = []
+
+          for (const raw of freeNames) {
+            const norm = raw.toLowerCase().trim()
+            const found = ingredients.find((i) => {
+              const iName = i.name.toLowerCase()
+              const iNameEn = (i.name_en ?? '').toLowerCase()
+              return (
+                iName === norm ||
+                iNameEn === norm ||
+                iName.includes(norm) ||
+                norm.includes(iName) ||
+                iNameEn.includes(norm) ||
+                norm.includes(iNameEn)
+              )
+            })
+            if (found) {
+              matched.add(found.name)
+            } else {
+              custom.push(raw)
+            }
+          }
+
+          setSelectedNames(matched)
+          setCustomIngredients(custom)
           dispatch(incrementAiPhotoUsage())
           trackLocalAiPhoto()
         }
@@ -181,7 +207,7 @@ export default function PhotoUpload({ onIngredientsConfirmed, onBack, initialFil
     const trimmed = name.trim()
     if (!trimmed) return
     setSelectedNames((prev) => new Set(prev).add(trimmed))
-    if (!ingredients.some((i) => i.name === trimmed)) {
+    if (!detectedIngredientNames.includes(trimmed)) {
       setCustomIngredients((prev) => prev.includes(trimmed) ? prev : [...prev, trimmed])
     }
     setAddProductAnchor(null)
@@ -361,7 +387,7 @@ export default function PhotoUpload({ onIngredientsConfirmed, onBack, initialFil
 
         {tab === 0 && status === 'done' && (
           <Box>
-            {detectedIngredientNames.length === 0 ? (
+            {selectedNames.size === 0 && customIngredients.length === 0 ? (
               <Alert severity="warning" sx={{ mb: 2 }}>
                 {t('photo_not_recognized_try')}
               </Alert>
@@ -371,7 +397,7 @@ export default function PhotoUpload({ onIngredientsConfirmed, onBack, initialFil
                   {t('photo_found_products')} {t('photo_select_hint')}
                 </Typography>
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2.5 }}>
-                  {[...detectedIngredientNames, ...customIngredients.filter(n => !detectedIngredientNames.includes(n))].map((name) => {
+                  {[...Array.from(selectedNames), ...customIngredients.filter(n => !selectedNames.has(n))].map((name) => {
                     const isSelected = selectedNames.has(name)
                     const matchedIng = ingredients.find(i => i.name.toLowerCase() === name.toLowerCase())
                     const displayName = matchedIng ? ingredientName(matchedIng, lang) : name

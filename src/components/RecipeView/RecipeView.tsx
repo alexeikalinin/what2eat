@@ -23,7 +23,7 @@ import CalorieCard from '../CalorieCard'
 import { usePlan } from '../../hooks/usePlan'
 import { useModalContext } from '../../contexts/ModalContext'
 import { useLanguage } from '../../hooks/useLanguage'
-import { recipeInstructions, recipeTitle, difficultyLabel } from '../../utils/lang'
+import { recipeInstructions, recipeTitle, difficultyLabel, translateUnit } from '../../utils/lang'
 
 interface RecipeViewProps {
   onBack: () => void
@@ -257,7 +257,7 @@ export default function RecipeView({ onBack }: RecipeViewProps) {
                       {lang === 'en' && ing.ingredient_name_en ? ing.ingredient_name_en : ing.ingredient_name}
                     </Typography>
                     <Typography variant="caption" sx={{ color: 'rgba(0,0,0,0.5)', fontWeight: 500 }}>
-                      {ing.quantity} {ing.unit}
+                      {ing.quantity} {translateUnit(ing.unit, lang)}
                     </Typography>
                   </ListItem>
                 ))}
