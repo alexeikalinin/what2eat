@@ -59,7 +59,7 @@ export const loginWithGoogle = createAsyncThunk(
     const redirectTo = typeof window !== 'undefined' ? window.location.origin : ''
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo, skipBrowserRedirect: true },
+      options: { redirectTo, skipBrowserRedirect: true, queryParams: { prompt: 'select_account' } },
     })
     if (error) return rejectWithValue(translateAuthError(error.message))
     // Явный редирект — не полагаемся на внутренний механизм Supabase
