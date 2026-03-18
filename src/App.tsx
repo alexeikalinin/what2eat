@@ -37,6 +37,8 @@ function App() {
   const [view, setView] = useState<View>('ingredients')
   const [prevView, setPrevView] = useState<View>('swipe_results')
   const [initialCameraFile, setInitialCameraFile] = useState<File | null>(null)
+  // Tutorial показывается если localStorage не помечен И пользователь не авторизован.
+  // При удалении аккаунта из Supabase localStorage остаётся — поэтому также проверяем auth.
   const [showTutorial, setShowTutorial] = useState(() => !getTutorialSeen())
   const [dbInitialized, setDbInitialized] = useState(false)
   const [dbError, setDbError] = useState<string | null>(null)
@@ -90,6 +92,14 @@ function App() {
     })
     return () => subscription.unsubscribe()
   }, [dispatch])
+
+  // Если auth resolved и пользователь не авторизован — всегда показывать туториал,
+  // даже если localStorage помечен (например, аккаунт был удалён из Supabase)
+  useEffect(() => {
+    if (plan !== 'loading' && !user) {
+      setShowTutorial(true)
+    }
+  }, [plan, user])
 
   // Handle Stripe redirect (success/cancel)
   useEffect(() => {
